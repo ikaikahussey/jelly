@@ -570,3 +570,194 @@ export type NewUserModelProvider = typeof userModelProviders.$inferInsert;
 
 export type Star = typeof stars.$inferSelect;
 export type NewStar = typeof stars.$inferInsert;
+
+// ========================================
+// KERNEL PRIMITIVES
+// ========================================
+
+/**
+ * Kernel Users - Platform-wide identity for deployed apps.
+ * Maps 1:1 with existing users table via user_id.
+ * The JWT cookie on the root domain gives deployed apps a verified user context.
+ */
+export const kernelUsers = sqliteTable('kernel_users', {
+    userId: text('user_id').primaryKey(), // same as users.id
+    email: text('email').notNull().unique(),
+    displayName: text('display_name'),
+    avatarR2Key: text('avatar_r2_key'),
+    profileJson: text('profile_json').default('{}'),
+    createdAt: integer('created_at').notNull(), // unix ms
+    updatedAt: integer('updated_at').notNull(),
+});
+
+/**
+ * Kernel Relationships - Directional edges between users.
+ * Apps define their own rel_type semantics (follow, friend, subscribe, blocked, etc.).
+ */
+export const kernelRelationships = sqliteTable('kernel_relationships', {
+    fromUser: text('from_user').notNull().references(() => kernelUsers.userId),
+    toUser: text('to_user').notNull().references(() => kernelUsers.userId),
+    relType: text('rel_type').notNull(),
+    metadataJson: text('metadata_json').default('{}'),
+    createdAt: integer('created_at').notNull(),
+}, (table) => ({
+    pk: uniqueIndex('kernel_rel_pk').on(table.fromUser, table.toUser, table.relType),
+    toIdx: index('idx_rel_to').on(table.toUser, table.relType),
+    typeIdx: index('idx_rel_type').on(table.relType),
+}));
+
+/**
+ * Kernel Objects - Generic content objects owned by users.
+ * Apps define their own object_type semantics (post, article, listing, game_state, etc.).
+ */
+export const kernelObjects = sqliteTable('kernel_objects', {
+    objectId: text('object_id').primaryKey(),
+    ownerId: text('owner_id').notNull().references(() => kernelUsers.userId),
+    objectType: text('object_type').notNull(),
+    payloadJson: text('payload_json').notNull(),
+    visibility: text('visibility').notNull().default('private'), // private | relationships | public
+    parentId: text('parent_id'),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+}, (table) => ({
+    ownerIdx: index('idx_obj_owner').on(table.ownerId, table.objectType),
+    typeIdx: index('idx_obj_type').on(table.objectType, table.visibility, table.createdAt),
+    parentIdx: index('idx_obj_parent').on(table.parentId),
+}));
+
+/**
+ * Kernel Ledger - Append-only financial ledger.
+ * Every transfer is two entries (debit + credit) written atomically.
+ * balance_after caches the running balance for fast reads.
+ */
+export const kernelLedger = sqliteTable('kernel_ledger', {
+    entryId: text('entry_id').primaryKey(),
+    userId: text('user_id').notNull().references(() => kernelUsers.userId),
+    amount: integer('amount').notNull(), // positive = credit, negative = debit (cents)
+    balanceAfter: integer('balance_after').notNull(),
+    entryType: text('entry_type').notNull(), // deposit | withdrawal | purchase | sale | platform_fee | grant | refund
+    referenceId: text('reference_id'),
+    counterpartyId: text('counterparty_id'),
+    createdAt: integer('created_at').notNull(),
+}, (table) => ({
+    userIdx: index('idx_ledger_user').on(table.userId, table.createdAt),
+}));
+
+/**
+ * Kernel Payment Accounts - External payment provider accounts (Stripe, etc.)
+ */
+export const kernelPaymentAccounts = sqliteTable('kernel_payment_accounts', {
+    userId: text('user_id').primaryKey().references(() => kernelUsers.userId),
+    provider: text('provider').notNull(),
+    externalAccountId: text('external_account_id').notNull(),
+    onboardingComplete: integer('onboarding_complete').default(0),
+    payoutEnabled: integer('payout_enabled').default(0),
+    createdAt: integer('created_at').notNull(),
+});
+
+/**
+ * Kernel User App Access - Tracks which deployed apps a user has accessed.
+ * Populated by the auth middleware on first access.
+ */
+export const kernelUserAppAccess = sqliteTable('kernel_user_app_access', {
+    userId: text('user_id').notNull().references(() => kernelUsers.userId),
+    appId: text('app_id').notNull(),
+    role: text('role').notNull().default('user'), // owner | user | viewer
+    pinned: integer('pinned').default(0),
+    firstAccessedAt: integer('first_accessed_at').notNull(),
+    lastAccessedAt: integer('last_accessed_at').notNull(),
+}, (table) => ({
+    pk: uniqueIndex('kernel_user_app_access_pk').on(table.userId, table.appId),
+}));
+
+/**
+ * Kernel App Registry - Published apps for discovery
+ */
+export const kernelAppRegistry = sqliteTable('kernel_app_registry', {
+    appId: text('app_id').primaryKey(),
+    ownerId: text('owner_id').notNull().references(() => kernelUsers.userId),
+    title: text('title').notNull(),
+    description: text('description'),
+    visibility: text('visibility').notNull().default('private'), // private | unlisted | public
+    thumbnailR2Key: text('thumbnail_r2_key'),
+    subdomain: text('subdomain').unique(),
+    listingId: text('listing_id'),
+    forkedFrom: text('forked_from'),
+    deployedAt: integer('deployed_at'),
+    createdAt: integer('created_at').notNull(),
+});
+
+/**
+ * Kernel Listings - Monetization listings for apps, components, templates
+ */
+export const kernelListings = sqliteTable('kernel_listings', {
+    listingId: text('listing_id').primaryKey(),
+    sellerId: text('seller_id').notNull().references(() => kernelUsers.userId),
+    itemType: text('item_type').notNull(), // app | component | template
+    itemId: text('item_id').notNull(),
+    priceCents: integer('price_cents'), // null = free
+    pricingModel: text('pricing_model').notNull().default('one_time'), // one_time | monthly | usage
+    active: integer('active').default(1),
+    createdAt: integer('created_at').notNull(),
+});
+
+/**
+ * Kernel Purchases - Purchase records
+ */
+export const kernelPurchases = sqliteTable('kernel_purchases', {
+    purchaseId: text('purchase_id').primaryKey(),
+    buyerId: text('buyer_id').notNull().references(() => kernelUsers.userId),
+    listingId: text('listing_id').notNull().references(() => kernelListings.listingId),
+    externalPaymentId: text('external_payment_id'),
+    amountCents: integer('amount_cents').notNull(),
+    platformFeeCents: integer('platform_fee_cents').notNull(),
+    status: text('status').notNull().default('active'), // active | refunded | expired
+    purchasedAt: integer('purchased_at').notNull(),
+});
+
+/**
+ * Kernel Components - Reusable components extracted from generated apps
+ */
+export const kernelComponents = sqliteTable('kernel_components', {
+    componentId: text('component_id').primaryKey(),
+    ownerId: text('owner_id').notNull().references(() => kernelUsers.userId),
+    name: text('name').notNull(),
+    description: text('description'),
+    r2BundleKey: text('r2_bundle_key').notNull(),
+    interfaceJson: text('interface_json'), // { provides: string[], consumes: string[] }
+    sourceAppId: text('source_app_id'),
+    listingId: text('listing_id'),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+});
+
+// Kernel type exports
+export type KernelUser = typeof kernelUsers.$inferSelect;
+export type NewKernelUser = typeof kernelUsers.$inferInsert;
+
+export type KernelRelationship = typeof kernelRelationships.$inferSelect;
+export type NewKernelRelationship = typeof kernelRelationships.$inferInsert;
+
+export type KernelObject = typeof kernelObjects.$inferSelect;
+export type NewKernelObject = typeof kernelObjects.$inferInsert;
+
+export type KernelLedgerEntry = typeof kernelLedger.$inferSelect;
+export type NewKernelLedgerEntry = typeof kernelLedger.$inferInsert;
+
+export type KernelPaymentAccount = typeof kernelPaymentAccounts.$inferSelect;
+export type NewKernelPaymentAccount = typeof kernelPaymentAccounts.$inferInsert;
+
+export type KernelUserAppAccess = typeof kernelUserAppAccess.$inferSelect;
+export type NewKernelUserAppAccess = typeof kernelUserAppAccess.$inferInsert;
+
+export type KernelAppRegistryEntry = typeof kernelAppRegistry.$inferSelect;
+export type NewKernelAppRegistryEntry = typeof kernelAppRegistry.$inferInsert;
+
+export type KernelListing = typeof kernelListings.$inferSelect;
+export type NewKernelListing = typeof kernelListings.$inferInsert;
+
+export type KernelPurchase = typeof kernelPurchases.$inferSelect;
+export type NewKernelPurchase = typeof kernelPurchases.$inferInsert;
+
+export type KernelComponent = typeof kernelComponents.$inferSelect;
+export type NewKernelComponent = typeof kernelComponents.$inferInsert;

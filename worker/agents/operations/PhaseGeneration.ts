@@ -93,7 +93,16 @@ These are the only dependencies, components and plugins available for the projec
 
 <STARTING TEMPLATE>
 {{template}}
-</STARTING TEMPLATE>`;
+</STARTING TEMPLATE>
+
+<PLATFORM_SDK>
+The @jelly/platform SDK is pre-installed and available to all generated apps. When planning phases:
+- For authentication: use platform.auth (requireUser/getUser). Never plan custom auth implementation.
+- For social features (follows, posts, feeds): plan to use platform.graph and platform.objects.
+- For payments/monetization: plan to use platform.ledger.
+- For marketplace/component reuse: check platform.marketplace.searchComponents() for existing reusable components before building from scratch.
+- The SDK handles all API calls to the platform kernel. No custom backend or database tables needed for these features.
+</PLATFORM_SDK>`;
 
 const NEXT_PHASE_USER_PROMPT = `**GENERATE THE PHASE**
 {{generateInstructions}}

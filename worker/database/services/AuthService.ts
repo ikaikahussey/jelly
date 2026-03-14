@@ -144,7 +144,20 @@ export class AuthService extends BaseService {
             // Log successful registration
             await this.logAuthAttempt(data.email, 'register', true, request);
             logger.info('User registered and logged in directly', { userId, email: data.email });
-            
+
+            // Sync kernel identity
+            try {
+                const { KernelAuthService } = await import('../../kernel/auth');
+                const kernelAuth = new KernelAuthService(this.env);
+                await kernelAuth.syncUser({
+                    id: newUser.id,
+                    email: newUser.email,
+                    displayName: newUser.displayName,
+                });
+            } catch (e) {
+                logger.warn('Failed to sync kernel user on register (non-blocking)', { error: e });
+            }
+
             // Create session and tokens immediately (log user in after registration)
             const { accessToken, session } = await this.sessionService.createSession(
                 userId,
@@ -413,16 +426,30 @@ export class AuthService extends BaseService {
             
             // Find or create user
             const user = await this.findOrCreateOAuthUser(provider, oauthUserInfo);
-            
+
+            // Sync kernel identity (platform-wide user for deployed apps)
+            try {
+                const { KernelAuthService } = await import('../../kernel/auth');
+                const kernelAuth = new KernelAuthService(this.env);
+                await kernelAuth.syncUser({
+                    id: user.id,
+                    email: user.email,
+                    displayName: user.displayName,
+                    avatarUrl: user.avatarUrl,
+                });
+            } catch (e) {
+                logger.warn('Failed to sync kernel user (non-blocking)', { error: e });
+            }
+
             // Create session
             const { accessToken: sessionAccessToken, session } = await this.sessionService.createSession(
                 user.id,
                 request
             );
-            
+
             // Log auth attempt
             await this.logAuthAttempt(user.email, `oauth_${provider}`, true, request);
-            
+
             logger.info('OAuth login successful', { userId: user.id, provider });
             
             return {

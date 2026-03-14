@@ -36,7 +36,22 @@ ${PROMPT_UTILS.COMMON_DEP_DOCUMENTATION}
 
 <BLUEPRINT>
 {{blueprint}}
-</BLUEPRINT>`;
+</BLUEPRINT>
+
+<PLATFORM_SDK>
+The @jelly/platform SDK is pre-installed. Use it for:
+- Auth: import { platform } from '@jelly/platform'; const user = await platform.auth.requireUser();
+- Social graph: platform.graph.link/unlink/query (follow, friend, subscribe, etc.)
+- Content objects: platform.objects.create/get/update/delete/query (posts, articles, listings, etc.)
+- Payments: platform.ledger.balance/transfer/history
+- Marketplace: platform.marketplace.getListing/checkout/myPurchases/searchComponents/getComponent
+
+Rules:
+- Never implement custom authentication. Use platform.auth.requireUser() or platform.auth.getUser().
+- For social features, use platform.graph and platform.objects instead of custom storage.
+- For payments, use platform.ledger instead of direct Stripe integration.
+- Before building complex UI components from scratch, check if a reusable component exists via platform.marketplace.searchComponents().
+</PLATFORM_SDK>`;
 
 const PHASE_IMPLEMENTATION_USER_PROMPT_TEMPLATE = `Phase Implementation
 

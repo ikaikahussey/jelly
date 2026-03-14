@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+Also use KERNEL.md as context.
+
 This file provides guidance to Claude Code when working with code in this repository.
 
 ## Communication Style

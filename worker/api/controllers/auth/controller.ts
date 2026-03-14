@@ -77,7 +77,7 @@ export class AuthController extends BaseController {
             setSecureAuthCookies(response, {
                 accessToken: result.accessToken,
                 accessTokenExpiry: SessionService.config.sessionTTL
-            });
+            }, env.CUSTOM_DOMAIN);
             
             // Rotate CSRF token on successful registration if configured
             if (CsrfService.defaults.rotateOnAuth) {
@@ -132,7 +132,7 @@ export class AuthController extends BaseController {
             setSecureAuthCookies(response, {
                 accessToken: result.accessToken,
                 accessTokenExpiry: SessionService.config.sessionTTL
-            });
+            }, env.CUSTOM_DOMAIN);
             
             // Rotate CSRF token on successful login if configured
             if (CsrfService.defaults.rotateOnAuth) {
@@ -346,7 +346,7 @@ export class AuthController extends BaseController {
             
             setSecureAuthCookies(response, {
                 accessToken: result.accessToken,
-            });
+            }, env.CUSTOM_DOMAIN);
             
             return response;
         } catch (error) {
@@ -662,7 +662,7 @@ export class AuthController extends BaseController {
             setSecureAuthCookies(response, {
                 accessToken: result.accessToken,
                 accessTokenExpiry: SessionService.config.sessionTTL
-            });
+            }, env.CUSTOM_DOMAIN);
             
             return response;
         } catch (error) {

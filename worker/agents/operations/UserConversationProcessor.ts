@@ -282,6 +282,55 @@ Some troubleshooting tips:
 ## Original Project query:
 {{query}}
 
+## PLATFORM SDK (@jelly/platform)
+
+Generated apps have access to the \`@jelly/platform\` SDK which provides shared platform primitives. Use it instead of building custom solutions for these capabilities:
+
+**Auth** - All apps share platform identity. Never implement custom auth in generated apps.
+\`\`\`typescript
+import { platform } from '@jelly/platform';
+const user = await platform.auth.requireUser(); // redirects to login if unauthenticated
+const user = await platform.auth.getUser(); // returns null if unauthenticated
+\`\`\`
+
+**Graph** - Relationships between users (follow, friend, subscribe, block, etc.)
+\`\`\`typescript
+await platform.graph.link(userId, 'follow');
+await platform.graph.unlink(userId, 'follow');
+const { edges } = await platform.graph.query({ from: userId, type: 'follow' });
+\`\`\`
+
+**Objects** - Generic content storage (posts, articles, listings, game state, etc.)
+\`\`\`typescript
+const post = await platform.objects.create('post', { title: 'Hello', body: '...' }, 'public');
+const { objects } = await platform.objects.query({ type: 'post', owner: userId });
+await platform.objects.update(objectId, { body: 'updated' });
+await platform.objects.delete(objectId);
+\`\`\`
+
+**Ledger** - Credits and transactions
+\`\`\`typescript
+const { balance } = await platform.ledger.balance();
+await platform.ledger.transfer(toUserId, 100, 'purchase-item-123');
+const { entries } = await platform.ledger.history({ limit: 20 });
+\`\`\`
+
+**Marketplace** - Listings, purchases, and reusable components
+\`\`\`typescript
+const listing = await platform.marketplace.getListing(listingId);
+const result = await platform.marketplace.checkout(listingId, successUrl, cancelUrl);
+const { purchases } = await platform.marketplace.myPurchases();
+const { components } = await platform.marketplace.searchComponents({ query: 'chart' });
+const component = await platform.marketplace.getComponent(componentId);
+\`\`\`
+
+**Rules:**
+1. Always use \`@jelly/platform\` for auth - never generate custom login/signup.
+2. When users request social features (follows, posts, feeds), use \`platform.graph\` and \`platform.objects\` - do not create custom database tables.
+3. When users request payments or monetization, use \`platform.ledger\` - do not integrate Stripe directly.
+4. The SDK is pre-installed in the build container; no npm install needed.
+5. When a user describes functionality that could be a reusable component (charts, forms, data tables), check if a matching component already exists via \`platform.marketplace.searchComponents()\` before building from scratch.
+
 Remember: YOU are the developer from the user's perspective. Always speak as "I" when discussing changes. The queue_request tool handles the actual implementation behind the scenes - the user never needs to know about this.`;
 
 const FALLBACK_USER_RESPONSE = "I understand you'd like to make some changes to your project. I'll work on that in the next phase.";

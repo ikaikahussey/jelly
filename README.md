@@ -1,6 +1,6 @@
-# 🧡 Cloudflare Vibe SDK
+# 🧡 Jelly
 
-> **An open source full-stack AI webapp generator** – Deploy your own instance of Cloudflare VibeSDK, an AI vibe coding platform that you can run and customize yourself.
+> **Social AI webapp generator** – Forked from Cloudflare VibeSDK.
 
 <div align="center">
 

@@ -111,8 +111,26 @@ async function handleUserAppRequest(request: Request, env: Env): Promise<Respons
 	const dispatcher = env['DISPATCHER'];
 
 	try {
+		// Check purchase access for paid apps before dispatching
+		try {
+			const { checkPurchaseAccess } = await import('./kernel/middleware');
+			const blocked = await checkPurchaseAccess(request, env, appName);
+			if (blocked) return blocked;
+		} catch (e) {
+			// Non-blocking: if purchase check fails, allow access
+		}
+
+		// Inject kernel user context for deployed apps
+		let dispatchRequest = request;
+		try {
+			const { injectKernelUserContext } = await import('./kernel/middleware');
+			dispatchRequest = await injectKernelUserContext(request, env, appName);
+		} catch (e) {
+			// Non-blocking: if kernel middleware fails, forward without user context
+		}
+
 		const worker = dispatcher.get(appName);
-		const dispatcherResponse = await worker.fetch(request);
+		const dispatcherResponse = await worker.fetch(dispatchRequest);
 
 		// Add headers to identify this as a dispatcher response
 		let headers = new Headers(dispatcherResponse.headers);
