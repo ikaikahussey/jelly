@@ -8,6 +8,9 @@
 	"main": "worker/index.ts",
 	"compatibility_date": "2025-08-10",
 	"compatibility_flags": ["nodejs_compat"],
+	"dev": {
+		"enable_containers": false
+	},
     "version_metadata": {
         "binding": "CF_VERSION_METADATA"
     },
@@ -46,13 +49,11 @@
 	 */
 	"ai": {
 		"binding": "AI",
-        "remote": true
 	},
     "dispatch_namespaces": [
         {
             "binding": "DISPATCHER",
             "namespace": "vibesdk-default-namespace",
-            "remote": true
         }
     ],
 	"containers": [
@@ -77,7 +78,6 @@
 			"database_name": "vibesdk-db",
 			"database_id": "c4721a2b-b96a-428a-8b2a-b3d255b307e9",
 			"migrations_dir": "migrations",
-			"remote": true
 		}
 	],
 	"durable_objects": {
@@ -104,14 +104,12 @@
       {
         "binding": "TEMPLATES_BUCKET",
         "bucket_name": "vibesdk-templates",
-        "remote": true
       }
     ],
     "kv_namespaces": [
         {
             "binding": "VibecoderStore",
             "id": "f066f3c2e4824981b48e8586c04db9c1",
-            "remote": true
         }
     ],
     // "placement": {
