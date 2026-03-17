@@ -19,7 +19,6 @@ export default function Dashboard() {
 	const { user } = useAuth();
 	const [activeTab, setActiveTab] = useState<DashboardTab>('my-apps');
 
-	// Listing modal from URL param (?listing=xxx)
 	const activeListingId = searchParams.get('listing');
 
 	const {
@@ -55,14 +54,13 @@ export default function Dashboard() {
 		setSearchParams(searchParams);
 	};
 
-	const tabs: { id: DashboardTab; label: string }[] = [
-		{ id: 'my-apps', label: 'My Apps' },
-		{ id: 'apps-i-use', label: 'Apps I Use' },
-		{ id: 'registry', label: 'App Registry' },
-		{ id: 'components', label: 'Components' },
+	const tabs: { id: DashboardTab; label: string; ascii: string }[] = [
+		{ id: 'my-apps', label: 'My Apps', ascii: '[1]' },
+		{ id: 'apps-i-use', label: 'Apps I Use', ascii: '[2]' },
+		{ id: 'registry', label: 'Registry', ascii: '[3]' },
+		{ id: 'components', label: 'Components', ascii: '[4]' },
 	];
 
-	// Show listing page as overlay if URL param is set
 	if (activeListingId) {
 		return (
 			<div className="min-h-screen bg-bg-3">
@@ -78,37 +76,45 @@ export default function Dashboard() {
 
 	return (
 		<div className="min-h-screen bg-bg-3">
-			<div className="container mx-auto px-4 py-8">
+			{/* Dithered background */}
+			<div className="fixed inset-0 z-0 opacity-20 pointer-events-none bg-dots text-text-tertiary" />
+
+			<div className="container mx-auto px-4 py-8 relative z-10">
 				<motion.div
 					initial={{ opacity: 0, y: -20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.5 }}
 				>
 					{/* Header */}
-					<div className="mb-8">
-						<h1 className="text-4xl font-bold mb-2 font-[departureMono] text-accent">
-							DASHBOARD
-						</h1>
-						{user && (
-							<p className="text-text-tertiary">
-								Welcome back, {user.displayName}
-							</p>
-						)}
+					<div className="mb-6">
+						<div className="flex items-baseline gap-4 mb-2">
+							<h1 className="text-2xl tracking-widest uppercase text-text-primary">
+								// DASHBOARD
+							</h1>
+							{user && (
+								<span className="text-xs text-text-tertiary">
+									logged in as {user.displayName}
+								</span>
+							)}
+						</div>
+						<div className="border-t border-dashed border-text-tertiary" />
 					</div>
 
-					{/* Tabs */}
-					<div className="flex gap-1 mb-8 border-b border-border">
-						{tabs.map((tab) => (
+					{/* Tabs -- retro button bar */}
+					<div className="flex gap-0 mb-6 border-2 border-text-primary w-fit">
+						{tabs.map((tab, i) => (
 							<button
 								key={tab.id}
 								onClick={() => setActiveTab(tab.id)}
 								className={cn(
-									'px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
+									'px-4 py-1.5 text-xs tracking-wider uppercase transition-colors',
+									i > 0 && 'border-l border-text-primary',
 									activeTab === tab.id
-										? 'border-accent text-accent'
-										: 'border-transparent text-text-tertiary hover:text-text-secondary'
+										? 'bg-text-primary text-text-inverted'
+										: 'bg-bg-4 text-text-secondary hover:bg-bg-2'
 								)}
 							>
+								<span className="text-[10px] mr-1 opacity-60">{tab.ascii}</span>
 								{tab.label}
 							</button>
 						))}

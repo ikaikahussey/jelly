@@ -16,6 +16,15 @@ import { ImageUploadButton } from '@/components/image-upload-button';
 import { ImageAttachmentPreview } from '@/components/image-attachment-preview';
 import { toast } from 'sonner';
 
+// ASCII art banner
+const ASCII_BANNER = `
+     ██╗███████╗██╗     ██╗  ██╗   ██╗
+     ██║██╔════╝██║     ██║  ╚██╗ ██╔╝
+     ██║█████╗  ██║     ██║   ╚████╔╝
+██   ██║██╔══╝  ██║     ██║    ╚██╔╝
+╚█████╔╝███████╗███████╗███████╗██║
+ ╚════╝ ╚══════╝╚══════╝╚══════╝╚═╝`.trim();
+
 export default function Home() {
 	const navigate = useNavigate();
 	const { requireAuth } = useAuthGuard();
@@ -24,6 +33,7 @@ export default function Home() {
 	const [query, setQuery] = useState('');
 	const { user } = useAuth();
 	const { isLoadingCapabilities, capabilities, getEnabledFeatures } = useFeature();
+	const [visitorCount] = useState(() => Math.floor(Math.random() * 9000) + 1000);
 
 	const modeOptions = useMemo<ProjectModeOption[]>(() => {
 		if (isLoadingCapabilities || !capabilities) return [];
@@ -84,7 +94,6 @@ export default function Home() {
 		limit: 6,
 	});
 
-	// Discover section should appear only when enough apps are available and loading is done
 	const discoverReady = useMemo(() => !loading && (apps?.length ?? 0) > 5, [loading, apps]);
 
 	const handleCreateApp = (query: string, mode: ProjectType) => {
@@ -97,8 +106,6 @@ export default function Home() {
 
 		const encodedQuery = encodeURIComponent(query);
 		const encodedMode = encodeURIComponent(mode);
-
-		// Encode images as JSON if present
 		const imageParam = images.length > 0 ? `&images=${encodeURIComponent(JSON.stringify(images))}` : '';
 		const intendedUrl = `/chat/new?query=${encodedQuery}&projectType=${encodedMode}${imageParam}`;
 
@@ -112,18 +119,15 @@ export default function Home() {
 			return;
 		}
 
-		// User is already authenticated, navigate immediately
 		navigate(intendedUrl);
-		// Clear images after navigation
 		clearImages();
 	};
 
-	// Auto-resize textarea based on content
 	const adjustTextareaHeight = () => {
 		if (textareaRef.current) {
 			textareaRef.current.style.height = 'auto';
 			const scrollHeight = textareaRef.current.scrollHeight;
-			const maxHeight = 300; // Maximum height in pixels
+			const maxHeight = 300;
 			textareaRef.current.style.height =
 				Math.min(scrollHeight, maxHeight) + 'px';
 		}
@@ -141,71 +145,70 @@ export default function Home() {
 			if (currentPlaceholderText.length < currentPhrase.length) {
 				const timeout = setTimeout(() => {
 					setCurrentPlaceholderText(currentPhrase.slice(0, currentPlaceholderText.length + 1));
-				}, 100); // Typing speed
+				}, 100);
 				return () => clearTimeout(timeout);
 			} else {
-				// Pause before erasing
 				const timeout = setTimeout(() => {
 					setIsPlaceholderTyping(false);
-				}, 2000); // Pause duration
+				}, 2000);
 				return () => clearTimeout(timeout);
 			}
 		} else {
 			if (currentPlaceholderText.length > 0) {
 				const timeout = setTimeout(() => {
 					setCurrentPlaceholderText(currentPlaceholderText.slice(0, -1));
-				}, 50); // Erasing speed
+				}, 50);
 				return () => clearTimeout(timeout);
 			} else {
-				// Move to next phrase
 				setCurrentPlaceholderPhraseIndex((prev) => (prev + 1) % placeholderPhrases.length);
 				setIsPlaceholderTyping(true);
 			}
 		}
 	}, [currentPlaceholderText, currentPlaceholderPhraseIndex, isPlaceholderTyping, placeholderPhrases]);
 
-	const discoverLinkRef = useRef<HTMLDivElement>(null);
-
 	return (
 		<div className="relative flex flex-col items-center size-full">
-			{/* Dotted background pattern - extends to full viewport */}
-			<div className="fixed inset-0 text-accent z-0 opacity-20 pointer-events-none">
-				<svg width="100%" height="100%">
-					<defs>
-						<pattern
-							id=":S2:"
-							viewBox="-6 -6 12 12"
-							patternUnits="userSpaceOnUse"
-							width="12"
-							height="12"
-						>
-							<circle
-								cx="0"
-								cy="0"
-								r="1"
-								fill="currentColor"
-							></circle>
-						</pattern>
-					</defs>
-					<rect
-						width="100%"
-						height="100%"
-						fill="url(#:S2:)"
-					></rect>
-				</svg>
-			</div>
-			
+			{/* Dithered dot pattern background */}
+			<div className="fixed inset-0 z-0 opacity-30 pointer-events-none bg-dots text-text-tertiary" />
+
+			{/* Scanline overlay */}
+			<div className="fixed inset-0 z-0 pointer-events-none opacity-[0.02]"
+				style={{
+					background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)',
+				}}
+			/>
+
 			<LayoutGroup>
-				<div className="rounded-md w-full max-w-2xl overflow-hidden">
+				<div className="w-full max-w-2xl overflow-hidden">
 					<motion.div
 						layout
 						transition={{ layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } }}
 						className={clsx(
 							"px-6 p-8 flex flex-col items-center z-10",
-							discoverReady ? "mt-48" : "mt-[20vh] sm:mt-[24vh] md:mt-[28vh]"
+							discoverReady ? "mt-32" : "mt-[16vh] sm:mt-[20vh] md:mt-[24vh]"
 						)}>
-						<h1 className="text-shadow-sm text-shadow-red-200 dark:text-shadow-red-900 text-accent font-medium leading-[1.1] tracking-tight text-5xl w-full mb-4 bg-clip-text bg-gradient-to-r from-text-primary to-text-primary/90">
-							What should we build today?
+
+						{/* ASCII art logo */}
+						<pre className="text-[6px] sm:text-[8px] md:text-[10px] leading-tight text-text-primary select-none mb-2 tracking-tighter">
+							{ASCII_BANNER}
+						</pre>
+
+						{/* Tagline */}
+						<div className="text-center mb-6">
+							<p className="text-xs text-text-tertiary tracking-widest uppercase">
+								-- build anything. connect everything. --
+							</p>
+							<p className="text-[10px] text-text-tertiary mt-1">
+								visitor #{visitorCount.toLocaleString()} | est. 2024
+							</p>
+						</div>
+
+						{/* Horizontal rule -- Geocities style */}
+						<div className="w-full mb-6 border-t border-dashed border-text-tertiary" />
+
+						<h1 className="text-text-primary font-medium leading-[1.1] tracking-tight text-2xl sm:text-3xl w-full mb-4">
+							&gt; What should we build today?
+							<span className="inline-block w-2 h-5 bg-text-primary ml-1 animate-blink align-middle" />
 						</h1>
 
 						<form
@@ -215,22 +218,22 @@ export default function Home() {
 								const query = textareaRef.current!.value;
 								handleCreateApp(query, projectMode);
 							}}
-							className="flex z-10 flex-col w-full min-h-[150px] bg-bg-4 border border-accent/30 dark:border-accent/50 dark:bg-bg-2 rounded-[18px] shadow-textarea p-5 transition-all duration-200"
+							className="flex z-10 flex-col w-full min-h-[150px] bg-bg-4 border-2 border-text-primary dark:bg-bg-2 shadow-textarea p-5 transition-all duration-200"
 						>
-							<div 
+							<div
 								className={clsx(
 									"flex-1 flex flex-col relative",
-									isDragging && "ring-2 ring-accent ring-offset-2 rounded-lg"
+									isDragging && "ring-2 ring-text-primary ring-offset-2"
 								)}
 								{...dragHandlers}
 							>
 								{isDragging && (
-									<div className="absolute inset-0 flex items-center justify-center bg-accent/10 backdrop-blur-sm rounded-lg z-30 pointer-events-none">
-										<p className="text-accent font-medium">Drop images here</p>
+									<div className="absolute inset-0 flex items-center justify-center bg-text-primary/10 backdrop-blur-sm z-30 pointer-events-none">
+										<p className="text-text-primary font-medium">&gt; drop_files_here</p>
 									</div>
 								)}
 								<textarea
-									className="w-full resize-none ring-0 z-20 outline-0 placeholder:text-text-primary/60 text-text-primary"
+									className="w-full resize-none ring-0 z-20 outline-0 placeholder:text-text-tertiary text-text-primary bg-transparent"
 									name="query"
 									value={query}
 									placeholder={`Create a ${currentPlaceholderText}`}
@@ -259,7 +262,7 @@ export default function Home() {
 							</div>
 							<div
 								className={clsx(
-									'flex items-center mt-4 pt-1',
+									'flex items-center mt-4 pt-1 border-t border-dashed border-text-tertiary/30',
 									showModeSelector ? 'justify-between' : 'justify-end',
 								)}
 							>
@@ -280,15 +283,23 @@ export default function Home() {
 									<button
 										type="submit"
 										disabled={!query.trim()}
-										className="bg-accent text-white p-1 rounded-md *:size-5 transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+										className="bg-text-primary text-text-inverted p-1 *:size-5 transition-all duration-200 hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed border border-text-primary"
 									>
 										<ArrowRight />
 									</button>
 								</div>
 							</div>
 						</form>
-					</motion.div>
 
+						{/* "Guestbook" style status bar */}
+						<div className="w-full mt-3 flex justify-between text-[10px] text-text-tertiary border border-dashed border-text-tertiary/30 px-3 py-1.5">
+							<span>STATUS: ONLINE</span>
+							<span>|</span>
+							<span>BEST VIEWED AT ANY RESOLUTION</span>
+							<span>|</span>
+							<span>MADE WITH {"<3"}</span>
+						</div>
+					</motion.div>
 				</div>
 
 				<AnimatePresence>
@@ -299,10 +310,10 @@ export default function Home() {
 							exit={{ opacity: 0, y: -10 }}
 							className="w-full max-w-2xl px-6"
 						>
-							<div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-bg-4/50 dark:bg-bg-2/50 border border-accent/20 dark:border-accent/30 shadow-sm">
-								<Info className="size-4 text-accent flex-shrink-0 mt-0.5" />
+							<div className="flex items-start gap-2 px-4 py-3 bg-bg-4/50 dark:bg-bg-2/50 border border-dashed border-text-tertiary">
+								<Info className="size-4 text-text-secondary flex-shrink-0 mt-0.5" />
 								<p className="text-xs text-text-tertiary leading-relaxed">
-									<span className="font-medium text-text-secondary">Images Beta:</span> Images guide app layout and design but may not be replicated exactly. The coding agent cannot access images directly for app assets.
+									<span className="font-medium text-text-secondary">[BETA]</span> Images guide app layout and design but may not be replicated exactly.
 								</p>
 							</div>
 						</motion.div>
@@ -318,15 +329,26 @@ export default function Home() {
 							animate={{ opacity: 1, height: "auto" }}
 							exit={{ opacity: 0, height: 0 }}
 							transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-							className={clsx('max-w-6xl mx-auto px-4 z-10', images.length > 0 ? 'mt-10' : 'mt-16 mb-8')}
+							className={clsx('max-w-6xl mx-auto px-4 z-10', images.length > 0 ? 'mt-10' : 'mt-12 mb-8')}
 						>
 							<div className='flex flex-col items-start'>
-								<h2 className="text-2xl font-medium text-text-secondary/80">Discover Apps built by the community</h2>
-								<div ref={discoverLinkRef} className="text-md font-light mb-4 text-text-tertiary hover:underline underline-offset-4 select-text cursor-pointer" onClick={() => navigate('/discover')} >View All</div>
+								{/* Section header -- retro divider */}
+								<div className="w-full border-t border-dashed border-text-tertiary mb-4" />
+								<div className="flex w-full items-baseline justify-between mb-4">
+									<h2 className="text-lg tracking-widest uppercase text-text-secondary">
+										// community_builds
+									</h2>
+									<button
+										className="text-xs text-text-tertiary hover:text-text-primary underline underline-offset-4 transition-colors"
+										onClick={() => navigate('/discover')}
+									>
+										[view all]
+									</button>
+								</div>
 								<motion.div
 									layout
 									transition={{ duration: 0.4 }}
-									className="grid grid-cols-2 xl:grid-cols-3 gap-6"
+									className="grid grid-cols-2 xl:grid-cols-3 gap-4"
 								>
 									<AnimatePresence mode="popLayout">
 										{apps.map(app => (
@@ -341,208 +363,12 @@ export default function Home() {
 										))}
 									</AnimatePresence>
 								</motion.div>
+								<div className="w-full border-b border-dashed border-text-tertiary mt-6" />
 							</div>
 						</motion.section>
 					)}
 				</AnimatePresence>
 			</LayoutGroup>
-
-			{/* Nudge towards Discover */}
-			{user && <CurvedArrow sourceRef={discoverLinkRef} target={{ x: 50, y: window.innerHeight - 60 }} />}
 		</div>
 	);
 }
-
-
-
-type ArrowProps = {
-	/** Ref to the source element the arrow starts from */
-	sourceRef: React.RefObject<HTMLElement | null>;
-	/** Target point in viewport/client coordinates */
-	target: { x: number; y: number };
-	/** Curve intensity (0.1 - 1.5 is typical) */
-	curvature?: number;
-	/** Optional pixel offset from source element edge */
-	sourceOffset?: number;
-	/** If true, hides the arrow when the source is offscreen/not measurable */
-	hideWhenInvalid?: boolean;
-};
-
-type Point = { x: number; y: number };
-
-export const CurvedArrow: React.FC<ArrowProps> = ({
-	sourceRef,
-	target,
-	curvature = 0.5,
-	sourceOffset = 6,
-	hideWhenInvalid = true,
-}) => {
-	const [start, setStart] = useState<Point | null>(null);
-	const [end, setEnd] = useState<Point | null>(null);
-
-	const rafRef = useRef<number | null>(null);
-	const roRef = useRef<ResizeObserver | null>(null);
-
-	const compute = () => {
-		const el = sourceRef.current;
-		if (!el) {
-			setStart(null);
-			setEnd(null);
-			return;
-		}
-
-		const rect = el.getBoundingClientRect();
-		if (!rect || rect.width === 0 || rect.height === 0) {
-			setStart(null);
-			setEnd(null);
-			return;
-		}
-
-		const endPoint: Point = { x: target.x, y: target.y };
-
-		// Choose an anchor on the source: midpoint of the side facing the target
-		const centers = {
-			right: { x: rect.right, y: rect.top + rect.height / 2 },
-			left: { x: rect.left, y: rect.top + rect.height / 2 },
-		};
-
-		// Distances to target from each side center
-		const dists = Object.fromEntries(
-			Object.entries(centers).map(([side, p]) => [
-				side,
-				(p.x - endPoint.x) ** 2 + (p.y - endPoint.y) ** 2,
-			])
-		) as Record<keyof typeof centers, number>;
-
-		const bestSide = (Object.entries(dists).sort((a, b) => a[1] - b[1])[0][0] ||
-			"right") as keyof typeof centers;
-
-		// Nudge start point slightly outside the element for visual clarity
-		const nudge = (p: Point, side: keyof typeof centers, offset: number) => {
-			switch (side) {
-				case "right":
-					return { x: p.x + offset, y: p.y };
-				case "left":
-					return { x: p.x - offset, y: p.y };
-			}
-		};
-
-		const startPoint = nudge(centers[bestSide], bestSide, sourceOffset);
-
-		setStart(startPoint);
-		setEnd(endPoint);
-	};
-
-	// Throttle updates with rAF to avoid layout thrash
-	const scheduleCompute = () => {
-		if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-		rafRef.current = requestAnimationFrame(compute);
-	};
-
-	useEffect(() => {
-		scheduleCompute();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [target.x, target.y, sourceRef.current]);
-
-	useEffect(() => {
-		const onScroll = () => scheduleCompute();
-		const onResize = () => scheduleCompute();
-
-		window.addEventListener("scroll", onScroll, { passive: true });
-		window.addEventListener("resize", onResize);
-
-		// Track source element size changes
-		const el = sourceRef.current;
-		if ("ResizeObserver" in window) {
-			roRef.current = new ResizeObserver(() => scheduleCompute());
-			if (el) roRef.current.observe(el);
-		}
-
-		scheduleCompute();
-
-		return () => {
-			window.removeEventListener("scroll", onScroll);
-			window.removeEventListener("resize", onResize);
-			if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-			if (roRef.current && el) roRef.current.unobserve(el);
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-
-	const d = useMemo(() => {
-		if (!start || !end) return "";
-
-		const dx = end.x - start.x;
-		const dy = end.y - start.y;
-
-		// Control points: bend the curve based on the primary axis difference.
-		// This gives a nice S or C curve without sharp kinks.
-		const cpOffset = Math.max(Math.abs(dx), Math.abs(dy)) * curvature;
-
-		const c1: Point = { x: start.x + cpOffset * (dx >= 0 ? 1 : -1), y: start.y };
-		const c2: Point = { x: end.x - cpOffset * (dx >= 0 ? 1 : -1), y: end.y };
-
-		return `M ${start.x},${start.y} C ${c1.x},${c1.y} ${c2.x},${c2.y} ${end.x},${end.y}`;
-	}, [start, end, curvature]);
-
-	const hidden = hideWhenInvalid && (!start || !end);
-
-	if (start && end && (end.y - start.y > 420 || start.x - end.x < 100)) {
-		return null;
-	}
-
-	return (
-		<svg
-			aria-hidden="true"
-			style={{
-				position: "fixed",
-				inset: 0,
-				width: "100vw",
-				height: "100vh",
-				pointerEvents: "none",
-				overflow: "visible",
-				zIndex: 9999,
-				display: hidden ? "none" : "block",
-			}}
-		>
-			<defs>
-				<filter id="discover-squiggle" x="-20%" y="-20%" width="140%" height="140%">
-					<feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="1" seed="3" result="noise" />
-					<feDisplacementMap in="SourceGraphic" in2="noise" scale="1" xChannelSelector="R" yChannelSelector="G" />
-				</filter>
-				<marker id="discover-arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth" opacity={0.20}>
-					<path d="M 0 1.2 L 7 4" stroke="var(--color-text-tertiary)" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-					<path d="M 0 6.8 L 7 4" stroke="var(--color-text-tertiary)" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-				</marker>
-			</defs>
-
-			<path
-				d={d}
-				// stroke="var(--color-accent)"
-				stroke="var(--color-text-tertiary)"
-				strokeOpacity={0.20}
-				strokeWidth={1.6}
-				fill="none"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-				vectorEffect="non-scaling-stroke"
-				markerEnd="url(#discover-arrowhead)"
-			/>
-			{/* Soft squiggle overlay for hand-drawn feel */}
-			<g filter="url(#discover-squiggle)">
-				<path
-					d={d}
-					// stroke="var(--color-accent)"
-					stroke="var(--color-text-tertiary)"
-					strokeOpacity={0.12}
-					strokeWidth={1}
-					fill="none"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					strokeDasharray="8 6 4 9 5 7"
-					vectorEffect="non-scaling-stroke"
-				/>
-			</g>
-		</svg>
-	);
-};
