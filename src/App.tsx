@@ -2,6 +2,7 @@ import { Outlet } from 'react-router';
 import { AuthProvider } from './contexts/auth-context';
 import { AuthModalProvider } from './components/auth/AuthModalProvider';
 import { ThemeProvider } from './contexts/theme-context';
+import { SkinProvider } from './contexts/skin-context';
 import { VaultProvider } from './contexts/vault-context';
 import { Toaster } from './components/ui/sonner';
 import { AppLayout } from './components/layout/app-layout';
@@ -12,6 +13,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
+        <SkinProvider>
         <FeatureProvider>
           <AuthProvider>
             <VaultProvider>
@@ -24,6 +26,7 @@ export default function App() {
             </VaultProvider>
           </AuthProvider>
         </FeatureProvider>
+        </SkinProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

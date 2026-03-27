@@ -64,7 +64,8 @@ export default function Dashboard() {
 	if (activeListingId) {
 		return (
 			<div className="min-h-screen bg-bg-3">
-				<div className="container mx-auto px-4 py-8">
+				<div className="fixed inset-0 z-0 pointer-events-none jelly-bg-pattern" />
+				<div className="container mx-auto px-4 py-8 relative z-10">
 					<ListingPage
 						listingId={activeListingId}
 						onClose={handleCloseListing}
@@ -77,7 +78,7 @@ export default function Dashboard() {
 	return (
 		<div className="min-h-screen bg-bg-3">
 			{/* Dithered background */}
-			<div className="fixed inset-0 z-0 opacity-20 pointer-events-none bg-dots text-text-tertiary" />
+			<div className="fixed inset-0 z-0 pointer-events-none jelly-bg-pattern" />
 
 			<div className="container mx-auto px-4 py-8 relative z-10">
 				<motion.div
@@ -85,76 +86,84 @@ export default function Dashboard() {
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.5 }}
 				>
-					{/* Header */}
-					<div className="mb-6">
-						<div className="flex items-baseline gap-4 mb-2">
-							<h1 className="text-2xl tracking-widest uppercase text-text-primary">
-								// DASHBOARD
-							</h1>
+					{/* Dashboard as HyperCard stack */}
+					<div className="jelly-card">
+						{/* Title bar */}
+						<div className="jelly-titlebar flex items-center gap-2 rounded-t-md">
+							<span className="jelly-close-box rounded-sm" />
+							<span className="flex-1 text-center text-xs text-text-secondary tracking-wider select-none">
+								Dashboard
+							</span>
 							{user && (
-								<span className="text-xs text-text-tertiary">
-									logged in as {user.displayName}
+								<span className="text-[10px] text-text-tertiary mr-2">
+									{user.displayName}
 								</span>
 							)}
 						</div>
-						<div className="border-t border-dashed border-text-tertiary" />
+
+						{/* Tab bar -- HyperCard beveled buttons */}
+						<div className="flex gap-2 px-4 pt-4 pb-2 border-b border-border-tertiary bg-bg-4 dark:bg-bg-2">
+							{tabs.map((tab) => (
+								<button
+									key={tab.id}
+									onClick={() => setActiveTab(tab.id)}
+									className={cn(
+										'px-3 py-1 text-xs tracking-wider uppercase transition-all duration-100',
+										activeTab === tab.id
+											? 'jelly-btn-active bg-bg-2 dark:bg-bg-4 text-text-primary'
+											: 'jelly-btn bg-bg-4 dark:bg-bg-2 text-text-secondary hover:text-text-primary'
+									)}
+								>
+									<span className="text-[10px] mr-1 opacity-50">{tab.ascii}</span>
+									{tab.label}
+								</button>
+							))}
+						</div>
+
+						{/* Card body -- tab content */}
+						<div className="p-4 sm:p-6 min-h-[400px]">
+							{activeTab === 'my-apps' && (
+								<AppListContainer
+									apps={apps}
+									loading={loading}
+									loadingMore={loadingMore}
+									error={error}
+									hasMore={hasMore}
+									totalCount={totalCount}
+									sortBy="recent"
+									onAppClick={(appId) => navigate(`/app/${appId}`)}
+									onToggleFavorite={handleToggleFavorite}
+									onLoadMore={loadMore}
+									onRetry={refetch}
+									showUser={false}
+									showStats={true}
+									showActions={true}
+									infiniteScroll={true}
+									emptyState={{
+										title: 'No apps yet',
+										description:
+											'Start building your first app with AI assistance.',
+									}}
+								/>
+							)}
+
+							{activeTab === 'apps-i-use' && <AppsIUse />}
+
+							{activeTab === 'registry' && <AppRegistry />}
+
+							{activeTab === 'components' && (
+								<ComponentMarketplace
+									onSelectListing={handleSelectListing}
+								/>
+							)}
+						</div>
+
+						{/* Card footer */}
+						<div className="flex justify-between text-[10px] text-text-tertiary border-t border-border-tertiary px-4 py-1.5 bg-bg-2 rounded-b-md">
+							<span>Card 1 of {tabs.length}</span>
+							<span>{activeTab.replace('-', ' ')}</span>
+						</div>
 					</div>
-
-					{/* Tabs -- retro button bar */}
-					<div className="flex gap-0 mb-6 border-2 border-text-primary w-fit">
-						{tabs.map((tab, i) => (
-							<button
-								key={tab.id}
-								onClick={() => setActiveTab(tab.id)}
-								className={cn(
-									'px-4 py-1.5 text-xs tracking-wider uppercase transition-colors',
-									i > 0 && 'border-l border-text-primary',
-									activeTab === tab.id
-										? 'bg-text-primary text-text-inverted'
-										: 'bg-bg-4 text-text-secondary hover:bg-bg-2'
-								)}
-							>
-								<span className="text-[10px] mr-1 opacity-60">{tab.ascii}</span>
-								{tab.label}
-							</button>
-						))}
-					</div>
-
-					{/* Tab Content */}
-					{activeTab === 'my-apps' && (
-						<AppListContainer
-							apps={apps}
-							loading={loading}
-							loadingMore={loadingMore}
-							error={error}
-							hasMore={hasMore}
-							totalCount={totalCount}
-							sortBy="recent"
-							onAppClick={(appId) => navigate(`/app/${appId}`)}
-							onToggleFavorite={handleToggleFavorite}
-							onLoadMore={loadMore}
-							onRetry={refetch}
-							showUser={false}
-							showStats={true}
-							showActions={true}
-							infiniteScroll={true}
-							emptyState={{
-								title: 'No apps yet',
-								description:
-									'Start building your first app with AI assistance.',
-							}}
-						/>
-					)}
-
-					{activeTab === 'apps-i-use' && <AppsIUse />}
-
-					{activeTab === 'registry' && <AppRegistry />}
-
-					{activeTab === 'components' && (
-						<ComponentMarketplace
-							onSelectListing={handleSelectListing}
-						/>
-					)}
 				</motion.div>
 			</div>
 		</div>

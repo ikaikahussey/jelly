@@ -1,15 +1,19 @@
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, Monitor, Paintbrush } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { useTheme } from '../contexts/theme-context';
+import { useSkin } from '../contexts/skin-context';
 
 export function ThemeToggle() {
   const { setTheme } = useTheme();
+  const { skin, setSkin } = useSkin();
 
   return (
     <DropdownMenu>
@@ -21,6 +25,9 @@ export function ThemeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-text-tertiary">
+          Mode
+        </DropdownMenuLabel>
         <DropdownMenuItem onClick={() => setTheme('light')}>
           <Sun className="mr-2 h-4 w-4" />
           <span>Light</span>
@@ -30,8 +37,22 @@ export function ThemeToggle() {
           <span>Dark</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('system')}>
-          <span className="mr-2 h-4 w-4">💻</span>
+          <Monitor className="mr-2 h-4 w-4" />
           <span>System</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-text-tertiary">
+          Skin
+        </DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => setSkin('hypercard')}>
+          <Paintbrush className="mr-2 h-4 w-4" />
+          <span>HyperCard</span>
+          {skin === 'hypercard' && <span className="ml-auto text-xs text-text-tertiary">*</span>}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setSkin('helvetica')}>
+          <Paintbrush className="mr-2 h-4 w-4" />
+          <span>Helvetica</span>
+          {skin === 'helvetica' && <span className="ml-auto text-xs text-text-tertiary">*</span>}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -222,7 +222,7 @@ export function AppSidebar() {
 											<TooltipTrigger asChild>
 												<button
 													className={cn(
-														'group flex w-full border-[0.5px] border-bg-2 items-center gap-2 font-medium hover:opacity-80 hover:cursor-pointer p-2 rounded-md cursor-hand text-text-secondary hover:text-text-primary',
+														'group flex w-full items-center gap-2 font-medium hover:cursor-pointer p-2 cursor-hand text-text-secondary hover:text-text-primary jelly-btn hover:jelly-btn-active transition-all duration-100',
 														isCollapsed
 															? 'justify-center bg-accent'
 															: 'justify-start bg-accent',

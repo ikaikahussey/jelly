@@ -168,136 +168,134 @@ export default function Home() {
 
 	return (
 		<div className="relative flex flex-col items-center size-full">
-			{/* Dithered dot pattern background */}
-			<div className="fixed inset-0 z-0 opacity-30 pointer-events-none bg-dots text-text-tertiary" />
-
-			{/* Scanline overlay */}
-			<div className="fixed inset-0 z-0 pointer-events-none opacity-[0.02]"
-				style={{
-					background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)',
-				}}
-			/>
+			{/* Subtle dithered background */}
+			<div className="fixed inset-0 z-0 pointer-events-none jelly-bg-pattern" />
 
 			<LayoutGroup>
-				<div className="w-full max-w-2xl overflow-hidden">
+				<div className="w-full max-w-2xl overflow-hidden px-4">
 					<motion.div
 						layout
 						transition={{ layout: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } }}
 						className={clsx(
-							"px-6 p-8 flex flex-col items-center z-10",
-							discoverReady ? "mt-32" : "mt-[16vh] sm:mt-[20vh] md:mt-[24vh]"
+							"flex flex-col items-center z-10",
+							discoverReady ? "mt-24" : "mt-[14vh] sm:mt-[18vh] md:mt-[22vh]"
 						)}>
 
-						{/* ASCII art logo */}
-						<pre className="text-[6px] sm:text-[8px] md:text-[10px] leading-tight text-text-primary select-none mb-2 tracking-tighter">
-							{ASCII_BANNER}
-						</pre>
-
-						{/* Tagline */}
-						<div className="text-center mb-6">
-							<p className="text-xs text-text-tertiary tracking-widest uppercase">
-								-- build anything. connect everything. --
-							</p>
-							<p className="text-[10px] text-text-tertiary mt-1">
-								visitor #{visitorCount.toLocaleString()} | est. 2024
-							</p>
-						</div>
-
-						{/* Horizontal rule -- Geocities style */}
-						<div className="w-full mb-6 border-t border-dashed border-text-tertiary" />
-
-						<h1 className="text-text-primary font-medium leading-[1.1] tracking-tight text-2xl sm:text-3xl w-full mb-4">
-							&gt; What should we build today?
-							<span className="inline-block w-2 h-5 bg-text-primary ml-1 animate-blink align-middle" />
-						</h1>
-
-						<form
-							method="POST"
-							onSubmit={(e) => {
-								e.preventDefault();
-								const query = textareaRef.current!.value;
-								handleCreateApp(query, projectMode);
-							}}
-							className="flex z-10 flex-col w-full min-h-[150px] bg-bg-4 border-2 border-text-primary dark:bg-bg-2 shadow-textarea p-5 transition-all duration-200"
-						>
-							<div
-								className={clsx(
-									"flex-1 flex flex-col relative",
-									isDragging && "ring-2 ring-text-primary ring-offset-2"
-								)}
-								{...dragHandlers}
-							>
-								{isDragging && (
-									<div className="absolute inset-0 flex items-center justify-center bg-text-primary/10 backdrop-blur-sm z-30 pointer-events-none">
-										<p className="text-text-primary font-medium">&gt; drop_files_here</p>
-									</div>
-								)}
-								<textarea
-									className="w-full resize-none ring-0 z-20 outline-0 placeholder:text-text-tertiary text-text-primary bg-transparent"
-									name="query"
-									value={query}
-									placeholder={`Create a ${currentPlaceholderText}`}
-									ref={textareaRef}
-									onChange={(e) => {
-										setQuery(e.target.value);
-										adjustTextareaHeight();
-									}}
-									onInput={adjustTextareaHeight}
-									onKeyDown={(e) => {
-										if (e.key === 'Enter' && !e.shiftKey) {
-											e.preventDefault();
-											const query = textareaRef.current!.value;
-											handleCreateApp(query, projectMode);
-										}
-									}}
-								/>
-								{images.length > 0 && (
-									<div className="mt-3">
-										<ImageAttachmentPreview
-											images={images}
-											onRemove={removeImage}
-										/>
-									</div>
-								)}
+						{/* === MAIN CARD (HyperCard stack) === */}
+						<div className="w-full jelly-card animate-card-dissolve">
+							{/* Title bar -- classic Mac window chrome */}
+							<div className="jelly-titlebar flex items-center gap-2 rounded-t-md">
+								<span className="jelly-close-box rounded-sm" />
+								<span className="flex-1 text-center text-xs text-text-secondary tracking-wider select-none">
+									Home
+								</span>
+								<span className="w-3" /> {/* spacer to balance close box */}
 							</div>
-							<div
-								className={clsx(
-									'flex items-center mt-4 pt-1 border-t border-dashed border-text-tertiary/30',
-									showModeSelector ? 'justify-between' : 'justify-end',
-								)}
-							>
-								{showModeSelector && (
-									<ProjectModeSelector
-										value={projectMode}
-										onChange={setProjectMode}
-										modes={modeOptions}
-										className="flex-1"
-									/>
-								)}
 
-								<div className={clsx('flex items-center gap-2', showModeSelector && 'ml-4')}>
-									<ImageUploadButton
-										onFilesSelected={addImages}
-										disabled={isProcessing}
-									/>
-									<button
-										type="submit"
-										disabled={!query.trim()}
-										className="bg-text-primary text-text-inverted p-1 *:size-5 transition-all duration-200 hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed border border-text-primary"
+							{/* Card body */}
+							<div className="p-6 sm:p-8">
+								{/* ASCII art logo */}
+								<pre className="text-[5px] sm:text-[7px] md:text-[9px] leading-tight text-text-primary select-none mb-3 tracking-tighter text-center">
+{ASCII_BANNER}
+								</pre>
+
+								<p className="text-center text-[10px] text-text-tertiary tracking-widest uppercase mb-6">
+									-- build anything. connect everything. --
+								</p>
+
+								{/* Prompt heading */}
+								<h1 className="text-text-primary font-medium leading-[1.1] tracking-tight text-xl sm:text-2xl w-full mb-4">
+									What should we build today?
+									<span className="inline-block w-2 h-4 bg-text-primary ml-1 animate-blink align-middle" />
+								</h1>
+
+								{/* Input field -- HyperCard scrolling field style */}
+								<form
+									method="POST"
+									onSubmit={(e) => {
+										e.preventDefault();
+										const query = textareaRef.current!.value;
+										handleCreateApp(query, projectMode);
+									}}
+									className="flex z-10 flex-col w-full min-h-[120px] jelly-field bg-bg-4 dark:bg-bg-2 p-4 transition-all duration-200"
+								>
+									<div
+										className={clsx(
+											"flex-1 flex flex-col relative",
+											isDragging && "ring-2 ring-text-primary ring-offset-2 rounded"
+										)}
+										{...dragHandlers}
 									>
-										<ArrowRight />
-									</button>
-								</div>
-							</div>
-						</form>
+										{isDragging && (
+											<div className="absolute inset-0 flex items-center justify-center bg-text-primary/10 backdrop-blur-sm rounded z-30 pointer-events-none">
+												<p className="text-text-primary font-medium">Drop files here</p>
+											</div>
+										)}
+										<textarea
+											className="w-full resize-none ring-0 z-20 outline-0 placeholder:text-text-tertiary text-text-primary bg-transparent"
+											name="query"
+											value={query}
+											placeholder={`Create a ${currentPlaceholderText}`}
+											ref={textareaRef}
+											onChange={(e) => {
+												setQuery(e.target.value);
+												adjustTextareaHeight();
+											}}
+											onInput={adjustTextareaHeight}
+											onKeyDown={(e) => {
+												if (e.key === 'Enter' && !e.shiftKey) {
+													e.preventDefault();
+													const query = textareaRef.current!.value;
+													handleCreateApp(query, projectMode);
+												}
+											}}
+										/>
+										{images.length > 0 && (
+											<div className="mt-3">
+												<ImageAttachmentPreview
+													images={images}
+													onRemove={removeImage}
+												/>
+											</div>
+										)}
+									</div>
+									<div
+										className={clsx(
+											'flex items-center mt-3 pt-2 border-t border-border-tertiary',
+											showModeSelector ? 'justify-between' : 'justify-end',
+										)}
+									>
+										{showModeSelector && (
+											<ProjectModeSelector
+												value={projectMode}
+												onChange={setProjectMode}
+												modes={modeOptions}
+												className="flex-1"
+											/>
+										)}
 
-						{/* "Guestbook" style status bar */}
-						<div className="w-full mt-3 flex justify-between text-[10px] text-text-tertiary border border-dashed border-text-tertiary/30 px-3 py-1.5">
-							<span>STATUS: ONLINE</span>
-							<span>|</span>
-							<span>BEST VIEWED AT ANY RESOLUTION</span>
-							<span>|</span>
-							<span>MADE WITH {"<3"}</span>
+										<div className={clsx('flex items-center gap-2', showModeSelector && 'ml-4')}>
+											<ImageUploadButton
+												onFilesSelected={addImages}
+												disabled={isProcessing}
+											/>
+											<button
+												type="submit"
+												disabled={!query.trim()}
+												className="jelly-btn bg-bg-4 dark:bg-bg-2 text-text-primary px-3 py-1 text-sm transition-all duration-100 hover:bg-bg-2 active:jelly-btn-active disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+											>
+												Build <ArrowRight className="size-3" />
+											</button>
+										</div>
+									</div>
+								</form>
+							</div>
+
+							{/* Card footer -- status bar */}
+							<div className="flex justify-between text-[10px] text-text-tertiary border-t border-border-tertiary px-4 py-1.5 bg-bg-2 rounded-b-md">
+								<span>Card 1 of 1</span>
+								<span>visitor #{visitorCount.toLocaleString()}</span>
+							</div>
 						</div>
 					</motion.div>
 				</div>
@@ -308,12 +306,12 @@ export default function Home() {
 							initial={{ opacity: 0, y: -10 }}
 							animate={{ opacity: 1, y: 0 }}
 							exit={{ opacity: 0, y: -10 }}
-							className="w-full max-w-2xl px-6"
+							className="w-full max-w-2xl px-4 mt-3"
 						>
-							<div className="flex items-start gap-2 px-4 py-3 bg-bg-4/50 dark:bg-bg-2/50 border border-dashed border-text-tertiary">
+							<div className="jelly-panel flex items-start gap-2 px-4 py-3">
 								<Info className="size-4 text-text-secondary flex-shrink-0 mt-0.5" />
 								<p className="text-xs text-text-tertiary leading-relaxed">
-									<span className="font-medium text-text-secondary">[BETA]</span> Images guide app layout and design but may not be replicated exactly.
+									<span className="font-medium text-text-secondary">Note:</span> Images guide app layout and design but may not be replicated exactly.
 								</p>
 							</div>
 						</motion.div>
@@ -329,41 +327,42 @@ export default function Home() {
 							animate={{ opacity: 1, height: "auto" }}
 							exit={{ opacity: 0, height: 0 }}
 							transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-							className={clsx('max-w-6xl mx-auto px-4 z-10', images.length > 0 ? 'mt-10' : 'mt-12 mb-8')}
+							className={clsx('max-w-6xl mx-auto px-4 z-10', images.length > 0 ? 'mt-6' : 'mt-10 mb-8')}
 						>
-							<div className='flex flex-col items-start'>
-								{/* Section header -- retro divider */}
-								<div className="w-full border-t border-dashed border-text-tertiary mb-4" />
-								<div className="flex w-full items-baseline justify-between mb-4">
-									<h2 className="text-lg tracking-widest uppercase text-text-secondary">
-										// community_builds
-									</h2>
+							{/* Discover section as its own HyperCard */}
+							<div className="jelly-panel">
+								<div className="jelly-titlebar flex items-center gap-2 rounded-t-md">
+									<span className="jelly-close-box rounded-sm" />
+									<span className="flex-1 text-center text-xs text-text-secondary tracking-wider select-none">
+										Community Stacks
+									</span>
 									<button
-										className="text-xs text-text-tertiary hover:text-text-primary underline underline-offset-4 transition-colors"
+										className="text-[10px] text-text-tertiary hover:text-text-primary transition-colors"
 										onClick={() => navigate('/discover')}
 									>
-										[view all]
+										Browse All
 									</button>
 								</div>
-								<motion.div
-									layout
-									transition={{ duration: 0.4 }}
-									className="grid grid-cols-2 xl:grid-cols-3 gap-4"
-								>
-									<AnimatePresence mode="popLayout">
-										{apps.map(app => (
-											<AppCard
-												key={app.id}
-												app={app}
-												onClick={() => navigate(`/app/${app.id}`)}
-												showStats={true}
-												showUser={true}
-												showActions={false}
-											/>
-										))}
-									</AnimatePresence>
-								</motion.div>
-								<div className="w-full border-b border-dashed border-text-tertiary mt-6" />
+								<div className="p-4">
+									<motion.div
+										layout
+										transition={{ duration: 0.4 }}
+										className="grid grid-cols-2 xl:grid-cols-3 gap-4"
+									>
+										<AnimatePresence mode="popLayout">
+											{apps.map(app => (
+												<AppCard
+													key={app.id}
+													app={app}
+													onClick={() => navigate(`/app/${app.id}`)}
+													showStats={true}
+													showUser={true}
+													showActions={false}
+												/>
+											))}
+										</AnimatePresence>
+									</motion.div>
+								</div>
 							</div>
 						</motion.section>
 					)}

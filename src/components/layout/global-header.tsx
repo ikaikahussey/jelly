@@ -32,7 +32,7 @@ export function GlobalHeader() {
 				animate={{ y: 0, opacity: 1 }}
 				transition={{ duration: 0.2, ease: 'easeOut' }}
 				className={clsx(
-					"sticky top-0 z-50 border-b border-dashed",
+					"sticky top-0 z-50 border-b-2 border-border-primary",
 					pathname !== "/" && "bg-bg-3"
 				)}
 			>
@@ -41,7 +41,7 @@ export function GlobalHeader() {
 						{/* Left: sidebar trigger + brand */}
 						{user ? (
 							<div className="flex items-center gap-3">
-								<SidebarTrigger className="h-7 w-7 text-text-primary hover:bg-bg-2 transition-colors duration-150" />
+								<SidebarTrigger className="h-7 w-7 jelly-btn text-text-primary hover:jelly-btn-active transition-colors duration-150 flex items-center justify-center" />
 								<span className="text-xs tracking-widest uppercase text-text-tertiary select-none hidden sm:inline">
 									JELLY.SH
 								</span>
@@ -51,7 +51,7 @@ export function GlobalHeader() {
 										onClick={hasChangeLogs ? () => setIsChangelogOpen(true) : undefined}
 										disabled={!hasChangeLogs}
 										className={clsx(
-											"flex items-center gap-1.5 border border-dashed px-2 py-0.5 text-[10px] text-text-secondary transition-colors hover:bg-bg-2",
+											"flex items-center gap-1.5 jelly-btn px-2 py-0.5 text-[10px] text-text-secondary transition-colors hover:jelly-btn-active",
 											!hasChangeLogs && "opacity-50 cursor-not-allowed pointer-events-none"
 										)}
 									>
@@ -75,11 +75,15 @@ export function GlobalHeader() {
 				</div>
 			</motion.header>
 			{hasChangeLogs && (
-				<DialogContent className="max-w-xl border-2">
+				<DialogContent className="jelly-panel max-w-xl">
 					<DialogHeader>
-						<DialogTitle className="tracking-widest uppercase text-sm">
-							// platform_updates
-						</DialogTitle>
+						<div className="jelly-titlebar flex items-center gap-2 rounded-t-md -mx-6 -mt-6 mb-4">
+							<span className="jelly-close-box rounded-sm" />
+							<DialogTitle className="flex-1 text-center text-xs tracking-wider select-none">
+								Platform Updates
+							</DialogTitle>
+							<span className="w-3" />
+						</div>
 						{status.globalUserMessage && (
 							<DialogDescription className="text-xs text-text-tertiary">
 								{status.globalUserMessage}

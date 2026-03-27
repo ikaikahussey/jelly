@@ -7,29 +7,10 @@
 }
 
 /* ================================================
-   JELLY AESTHETIC: Glitch x Geocities x B&W Modern
+   JELLY THEMEABLE UI
+   Two-axis: skin (visual identity) x theme (light/dark)
+   Skins: hypercard, helvetica
    ================================================ */
-
-/* Scanline overlay for retro CRT feel */
-@keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100vh); }
-}
-
-/* Subtle glitch flicker on hover */
-@keyframes glitch-shift {
-  0%, 100% { transform: translate(0); }
-  20% { transform: translate(-1px, 1px); }
-  40% { transform: translate(1px, -1px); }
-  60% { transform: translate(-1px, 0); }
-  80% { transform: translate(1px, 1px); }
-}
-
-/* Marquee scroll for retro vibes */
-@keyframes marquee {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
-}
 
 /* Blink cursor */
 @keyframes blink {
@@ -37,10 +18,10 @@
   50% { opacity: 0; }
 }
 
-/* Dither noise pattern */
-@keyframes noise-shift {
-  0% { background-position: 0 0; }
-  100% { background-position: 100px 100px; }
+/* Card dissolve transition */
+@keyframes card-dissolve {
+  0% { opacity: 0; filter: contrast(2) brightness(1.5); }
+  100% { opacity: 1; filter: contrast(1) brightness(1); }
 }
 
 /* Subtle chat edge throb effect */
@@ -122,21 +103,14 @@
 @custom-variant dark (&:is(.dark *));
 @plugin '@tailwindcss/typography';
 @theme inline {
-	--radius-sm: 0px;
-	--radius-md: 0px;
-	--radius-lg: 0px;
-	--radius-xl: 0px;
-	--color-accent:
-		var(--build-accent-color);
-	--color-destructive:
-		var(--destructive);
-	--color-input:
-		var(--input);
-	--color-ring:
-		var(--ring);
-	--shadow-textarea:
-		2px 2px 0px rgba(0, 0, 0, 0.08),
-		0px 0px 0px 1px rgba(0, 0, 0, 0.1);
+	--radius-sm: var(--jelly-radius-sm, 4px);
+	--radius-md: var(--jelly-radius, 8px);
+	--radius-lg: var(--jelly-radius-lg, 12px);
+	--radius-xl: var(--jelly-radius-xl, 16px);
+	--color-accent: var(--build-accent-color);
+	--color-destructive: var(--destructive);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
 	--color-bg-1: var(--build-chat-colors-bg-1);
 	--color-bg-2: var(--build-chat-colors-bg-2);
 	--color-bg-3: var(--build-chat-colors-bg-3);
@@ -152,52 +126,129 @@
 	--color-text-primary: var(--build-chat-colors-text-primary);
 	--color-text-secondary: var(--build-chat-colors-text-secondary);
 	--color-text-tertiary: var(--build-chat-colors-text-tertiary);
-
-	--shadow-textarea:
-		2px 2px 0px rgba(0, 0, 0, 0.08),
-		0px 0px 0px 1px rgba(0, 0, 0, 0.1);
+	--shadow-textarea: var(--jelly-field-shadow, none), 2px 2px 0px rgba(0, 0, 0, 0.08);
 	--animate-typing-dot: typing-dot 1.2s ease-in-out infinite;
 	--animate-shake: shake 1s ease-in-out;
 }
 
-
+/* ================================================
+   BASE DEFAULTS (overridden by skin classes)
+   ================================================ */
 :root {
-	--radius: 0px;
+	--radius: 8px;
 	--destructive: #000000;
 	--border: #000000;
 	--input: #e8e8e8;
 	--ring: #000000;
 
-	/* B&W Light palette */
+	/* Jelly skin variables -- generic interface, set per skin */
+	--jelly-font: 'departureMono', 'Courier New', monospace;
+	--jelly-radius: 8px;
+	--jelly-radius-sm: 4px;
+	--jelly-radius-lg: 12px;
+	--jelly-radius-xl: 16px;
+	--jelly-border-width: 2px;
+	--jelly-card-shadow: none;
+	--jelly-stack-shadow: none;
+	--jelly-btn-shadow: none;
+	--jelly-btn-active-shadow: none;
+	--jelly-field-shadow: none;
+	--jelly-titlebar-pattern: none;
+	--jelly-bg-pattern: none;
+	--jelly-close-box-display: none;
+
+	/* Default palette (hypercard light) */
 	--build-accent-color: #000000;
-	--build-chat-colors-bg-1: #d4d4d4;
-	--build-chat-colors-bg-2: #e8e8e8;
-	--build-chat-colors-bg-3: #f0f0f0;
+	--build-chat-colors-bg-1: #c0c0c0;
+	--build-chat-colors-bg-2: #d8d8d8;
+	--build-chat-colors-bg-3: #e8e8e8;
 	--build-chat-colors-bg-4: #ffffff;
 	--build-chat-colors-border-primary: #000000;
-	--build-chat-colors-border-secondary: #999999;
-	--build-chat-colors-border-tertiary: #cccccc;
+	--build-chat-colors-border-secondary: #808080;
+	--build-chat-colors-border-tertiary: #c0c0c0;
 	--build-chat-colors-danger: #000000;
 	--build-chat-colors-brand-heavy: #000000;
 	--build-chat-colors-brand-primary: #000000;
-	--build-chat-colors-brand-subtle: #666666;
+	--build-chat-colors-brand-subtle: #555555;
 	--build-chat-colors-text-inverted: #ffffff;
 	--build-chat-colors-text-primary: #000000;
 	--build-chat-colors-text-secondary: #222222;
-	--build-chat-colors-text-tertiary: #666666;
+	--build-chat-colors-text-tertiary: #555555;
 }
 
 .dark {
 	--destructive: #ffffff;
 	--border: #ffffff;
 	--input: #1a1a1a;
+}
 
-	/* B&W Dark palette */
+/* ================================================
+   SKIN: HyperCard
+   1-bit, beveled, card stacks, System 7 chrome
+   ================================================ */
+.skin-hypercard {
+	--jelly-font: 'departureMono', 'Courier New', monospace;
+	--jelly-radius: 8px;
+	--jelly-radius-sm: 4px;
+	--jelly-radius-lg: 12px;
+	--jelly-radius-xl: 16px;
+	--jelly-border-width: 2px;
+	--jelly-bevel-light: #ffffff;
+	--jelly-bevel-dark: #808080;
+	--jelly-card-shadow: 1px 1px 0px #808080, 2px 2px 0px #808080;
+	--jelly-stack-shadow:
+		1px 1px 0px #808080,
+		2px 2px 0px #808080,
+		3px 3px 0px #c0c0c0,
+		4px 4px 0px #c0c0c0;
+	--jelly-btn-shadow:
+		inset -1px -1px 0px var(--jelly-bevel-dark),
+		inset 1px 1px 0px var(--jelly-bevel-light);
+	--jelly-btn-active-shadow:
+		inset 1px 1px 0px var(--jelly-bevel-dark),
+		inset -1px -1px 0px var(--jelly-bevel-light);
+	--jelly-field-shadow:
+		inset 1px 1px 0px var(--jelly-bevel-dark),
+		inset -1px -1px 0px var(--jelly-bevel-light);
+	--jelly-titlebar-pattern: repeating-linear-gradient(
+		0deg, transparent, transparent 1px, rgba(0,0,0,0.08) 1px, rgba(0,0,0,0.08) 2px
+	);
+	--jelly-bg-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='2' viewBox='0 0 2 2'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23000' fill-opacity='0.05'/%3E%3C/svg%3E");
+	--jelly-close-box-display: inline-block;
+
+	--build-accent-color: #000000;
+	--build-chat-colors-bg-1: #c0c0c0;
+	--build-chat-colors-bg-2: #d8d8d8;
+	--build-chat-colors-bg-3: #e8e8e8;
+	--build-chat-colors-bg-4: #ffffff;
+	--build-chat-colors-border-primary: #000000;
+	--build-chat-colors-border-secondary: #808080;
+	--build-chat-colors-border-tertiary: #c0c0c0;
+	--build-chat-colors-danger: #000000;
+	--build-chat-colors-brand-heavy: #000000;
+	--build-chat-colors-brand-primary: #000000;
+	--build-chat-colors-brand-subtle: #555555;
+	--build-chat-colors-text-inverted: #ffffff;
+	--build-chat-colors-text-primary: #000000;
+	--build-chat-colors-text-secondary: #222222;
+	--build-chat-colors-text-tertiary: #555555;
+}
+
+.skin-hypercard.dark {
+	--jelly-bevel-light: #444444;
+	--jelly-bevel-dark: #000000;
+	--jelly-card-shadow: 1px 1px 0px #000000, 2px 2px 0px #000000;
+	--jelly-stack-shadow:
+		1px 1px 0px #000000,
+		2px 2px 0px #000000,
+		3px 3px 0px #111111,
+		4px 4px 0px #111111;
+
 	--build-accent-color: #ffffff;
 	--build-chat-colors-bg-1: #0a0a0a;
-	--build-chat-colors-bg-2: #111111;
-	--build-chat-colors-bg-3: #181818;
-	--build-chat-colors-bg-4: #222222;
+	--build-chat-colors-bg-2: #141414;
+	--build-chat-colors-bg-3: #1c1c1c;
+	--build-chat-colors-bg-4: #2a2a2a;
 	--build-chat-colors-border-primary: #ffffff;
 	--build-chat-colors-border-secondary: #666666;
 	--build-chat-colors-border-tertiary: #333333;
@@ -209,13 +260,79 @@
 	--build-chat-colors-text-primary: #ffffff;
 	--build-chat-colors-text-secondary: #cccccc;
 	--build-chat-colors-text-tertiary: #888888;
+}
 
-	--shadow-dialog:
-		0px 0px 0px 1px rgba(255, 255, 255, 0.15),
-		4px 4px 0px rgba(255, 255, 255, 0.05);
-	--shadow-elevation:
-		2px 2px 0px rgba(255, 255, 255, 0.05),
-		0px 0px 0px 1px rgba(255, 255, 255, 0.1);
+/* ================================================
+   SKIN: Helvetica
+   Modern, clean, Helvetica, black/white/red accent
+   ================================================ */
+.skin-helvetica {
+	--jelly-font: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+	--jelly-radius: 6px;
+	--jelly-radius-sm: 3px;
+	--jelly-radius-lg: 10px;
+	--jelly-radius-xl: 14px;
+	--jelly-border-width: 1px;
+	--jelly-card-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+	--jelly-stack-shadow: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+	--jelly-btn-shadow: 0 1px 2px rgba(0,0,0,0.05);
+	--jelly-btn-active-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+	--jelly-field-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
+	--jelly-titlebar-pattern: none;
+	--jelly-bg-pattern: none;
+	--jelly-close-box-display: none;
+
+	--build-accent-color: #e60000;
+	--build-chat-colors-bg-1: #f0f0f0;
+	--build-chat-colors-bg-2: #f7f7f7;
+	--build-chat-colors-bg-3: #ffffff;
+	--build-chat-colors-bg-4: #ffffff;
+	--build-chat-colors-border-primary: #d4d4d4;
+	--build-chat-colors-border-secondary: #e5e5e5;
+	--build-chat-colors-border-tertiary: #f0f0f0;
+	--build-chat-colors-danger: #e60000;
+	--build-chat-colors-brand-heavy: #e60000;
+	--build-chat-colors-brand-primary: #e60000;
+	--build-chat-colors-brand-subtle: #ff6666;
+	--build-chat-colors-text-inverted: #ffffff;
+	--build-chat-colors-text-primary: #111111;
+	--build-chat-colors-text-secondary: #444444;
+	--build-chat-colors-text-tertiary: #888888;
+
+	--destructive: #e60000;
+	--border: #d4d4d4;
+	--input: #f5f5f5;
+	--ring: #e60000;
+}
+
+.skin-helvetica.dark {
+	--jelly-card-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+	--jelly-stack-shadow: 0 4px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.25);
+	--jelly-btn-shadow: 0 1px 2px rgba(0,0,0,0.2);
+	--jelly-btn-active-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+	--jelly-field-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+
+	--build-accent-color: #ff3333;
+	--build-chat-colors-bg-1: #0a0a0a;
+	--build-chat-colors-bg-2: #111111;
+	--build-chat-colors-bg-3: #161616;
+	--build-chat-colors-bg-4: #1c1c1c;
+	--build-chat-colors-border-primary: #2a2a2a;
+	--build-chat-colors-border-secondary: #222222;
+	--build-chat-colors-border-tertiary: #1a1a1a;
+	--build-chat-colors-danger: #ff3333;
+	--build-chat-colors-brand-heavy: #ff3333;
+	--build-chat-colors-brand-primary: #ff3333;
+	--build-chat-colors-brand-subtle: #cc0000;
+	--build-chat-colors-text-inverted: #000000;
+	--build-chat-colors-text-primary: #f0f0f0;
+	--build-chat-colors-text-secondary: #aaaaaa;
+	--build-chat-colors-text-tertiary: #666666;
+
+	--destructive: #ff3333;
+	--border: #2a2a2a;
+	--input: #1a1a1a;
+	--ring: #ff3333;
 }
 
 @layer base {
@@ -224,7 +341,7 @@
 	}
   	body {
     	@apply bg-bg-3 text-text-primary h-full;
-		font-family: 'departureMono', 'Courier New', monospace;
+		font-family: var(--jelly-font, 'departureMono', monospace);
 	}
 	button {
 		@apply cursor-pointer;
@@ -235,22 +352,17 @@
 }
 
 @theme {
-	--font-sans:
-		'departureMono', 'Courier New', 'Courier', monospace;
+	--font-sans: var(--jelly-font, 'departureMono', monospace);
 
-	--color-brand: #000000;
-	--color-text: #000;
+	--color-brand: var(--build-accent-color, #000000);
+	--color-text: var(--build-chat-colors-text-primary, #000);
 	--color-text-on-brand: #fff;
 
-	--shadow-dialog:
-		0px 0px 0px 1px rgba(0, 0, 0, 0.15),
-		4px 4px 0px rgba(0, 0, 0, 0.08);
-	--shadow-elevation:
-		2px 2px 0px rgba(0, 0, 0, 0.06),
-		0px 0px 0px 1px rgba(0, 0, 0, 0.1);
+	--shadow-dialog: var(--jelly-card-shadow, none);
+	--shadow-elevation: var(--jelly-card-shadow, none);
 	--shadow-soft-layered:
-		2px 2px 0px rgba(0, 0, 0, 0.04),
-		0px 0px 0px 1px rgba(0, 0, 0, 0.06);
+		1px 1px 0px rgba(0, 0, 0, 0.06),
+		0px 0px 0px 1px rgba(0, 0, 0, 0.08);
 }
 
 
@@ -259,25 +371,14 @@
 	position: absolute !important;
 }
 
-/* Dithered background pattern -- replaces the old graph paper */
+/* Skin-aware background pattern */
 @utility bg-graph-paper {
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23000' fill-opacity='0.04'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23000' fill-opacity='0.04'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Crect x='0' y='0' width='1' height='1' fill='%23000' fill-opacity='0.06'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23000' fill-opacity='0.06'/%3E%3C/svg%3E");
 }
 
-/* Crosshatch pattern utility */
-@utility bg-crosshatch {
-	background-image: url("data:image/svg+xml,%3Csvg width='8' height='8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l8 8M8 0l-8 8' stroke='%23000' stroke-opacity='0.06' stroke-width='0.5'/%3E%3C/svg%3E");
-}
-
-/* Dotted pattern -- Geocities vibes */
-@utility bg-dots {
-	background-image: radial-gradient(circle, currentColor 0.5px, transparent 0.5px);
-	background-size: 8px 8px;
-}
-
-/* Retro marquee utility */
-@utility animate-marquee {
-	animation: marquee 20s linear infinite;
+/* Skin-driven background pattern (checkerboard for HyperCard, none for Helvetica) */
+@utility jelly-bg-pattern {
+	background-image: var(--jelly-bg-pattern, none);
 }
 
 /* Blink cursor for typewriter */
@@ -285,34 +386,62 @@
 	animation: blink 0.8s step-end infinite;
 }
 
-/* Glitch hover effect */
-@utility hover-glitch {
-	&:hover {
-		animation: glitch-shift 0.3s ease-in-out;
-	}
+/* Card dissolve animation */
+@utility animate-card-dissolve {
+	animation: card-dissolve 0.4s ease-out;
 }
 
-/* Double-border retro card style */
-@utility border-double-retro {
-	border: 2px solid currentColor;
-	outline: 1px solid currentColor;
-	outline-offset: 2px;
+/* Button -- raised appearance (beveled in HyperCard, subtle shadow in Helvetica) */
+@utility jelly-btn {
+	border: var(--jelly-border-width) solid var(--build-chat-colors-border-primary);
+	border-radius: var(--jelly-radius);
+	box-shadow: var(--jelly-btn-shadow);
 }
 
-/* ASCII box drawing border */
-@utility border-ascii {
-	border: 1px dashed currentColor;
+/* Button -- pressed/active appearance */
+@utility jelly-btn-active {
+	border: var(--jelly-border-width) solid var(--build-chat-colors-border-primary);
+	border-radius: var(--jelly-radius);
+	box-shadow: var(--jelly-btn-active-shadow);
 }
 
-/* "Under construction" stripe pattern */
-@utility bg-construction {
-	background: repeating-linear-gradient(
-		-45deg,
-		transparent,
-		transparent 5px,
-		rgba(0,0,0,0.04) 5px,
-		rgba(0,0,0,0.04) 10px
-	);
+/* Panel -- secondary card (lighter shadow) */
+@utility jelly-panel {
+	border: var(--jelly-border-width) solid var(--build-chat-colors-border-primary);
+	border-radius: var(--jelly-radius);
+	background: var(--build-chat-colors-bg-4);
+	box-shadow: var(--jelly-card-shadow);
+}
+
+/* Card -- primary container (deeper shadow for stack effect) */
+@utility jelly-card {
+	border: var(--jelly-border-width) solid var(--build-chat-colors-border-primary);
+	border-radius: var(--jelly-radius);
+	background: var(--build-chat-colors-bg-4);
+	box-shadow: var(--jelly-stack-shadow);
+}
+
+/* Field -- inset input area (beveled inset for HyperCard, subtle for Helvetica) */
+@utility jelly-field {
+	border: var(--jelly-border-width) solid var(--build-chat-colors-border-primary);
+	border-radius: var(--jelly-radius-sm);
+	box-shadow: var(--jelly-field-shadow);
+}
+
+/* Title bar -- window chrome header */
+@utility jelly-titlebar {
+	border-bottom: var(--jelly-border-width) solid var(--build-chat-colors-border-primary);
+	padding: 4px 12px;
+	background: var(--build-chat-colors-bg-2);
+	background-image: var(--jelly-titlebar-pattern, none);
+}
+
+/* Close box -- visible in HyperCard, hidden in Helvetica */
+@utility jelly-close-box {
+	width: 12px;
+	height: 12px;
+	border: 1px solid var(--build-chat-colors-border-primary);
+	display: var(--jelly-close-box-display, none);
 }
 
 ::-webkit-scrollbar {
