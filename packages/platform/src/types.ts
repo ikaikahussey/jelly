@@ -1,5 +1,5 @@
 /**
- * @jelly/platform - Type definitions
+ * @jllly/platform - Type definitions
  * Zero dependencies. These types mirror the kernel API responses.
  */
 

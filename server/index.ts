@@ -1,5 +1,5 @@
 /**
- * Jelly Server Entry Point (Bun/Node)
+ * JLLLY Server Entry Point (Bun/Node)
  *
  * Alternative to the Cloudflare Workers entry point (worker/index.ts).
  * Runs the same Hono app with portable infrastructure providers.
@@ -106,7 +106,7 @@ async function main() {
 	const envShim = env as unknown as Env;
 	const app = createApp(envShim, registry);
 
-	logger.info(`Starting Jelly server on port ${PORT}`);
+	logger.info(`Starting JLLLY server on port ${PORT}`);
 
 	// Use Bun.serve if available, otherwise fall back to node:http
 	if (typeof globalThis.Bun !== 'undefined') {
@@ -114,7 +114,7 @@ async function main() {
 			port: PORT,
 			fetch: (request: Request) => app.fetch(request, envShim),
 		});
-		logger.info(`Jelly server running at http://localhost:${PORT} (Bun)`);
+		logger.info(`JLLLY server running at http://localhost:${PORT} (Bun)`);
 	} else {
 		// Node.js fallback using @hono/node-server
 		const { serve } = await import('@hono/node-server');
@@ -122,7 +122,7 @@ async function main() {
 			fetch: (request: Request) => app.fetch(request, envShim),
 			port: PORT,
 		});
-		logger.info(`Jelly server running at http://localhost:${PORT} (Node)`);
+		logger.info(`JLLLY server running at http://localhost:${PORT} (Node)`);
 	}
 }
 

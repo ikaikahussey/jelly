@@ -1,5 +1,5 @@
 /**
- * @jelly/platform - Objects module
+ * @jllly/platform - Objects module
  * Generic content object CRUD with visibility control.
  */
 

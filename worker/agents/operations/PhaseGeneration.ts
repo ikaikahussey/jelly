@@ -96,7 +96,7 @@ These are the only dependencies, components and plugins available for the projec
 </STARTING TEMPLATE>
 
 <PLATFORM_SDK>
-The @jelly/platform SDK is pre-installed and available to all generated apps. When planning phases:
+The @jllly/platform SDK is pre-installed and available to all generated apps. When planning phases:
 - For authentication: use platform.auth (requireUser/getUser). Never plan custom auth implementation.
 - For social features (follows, posts, feeds): plan to use platform.graph and platform.objects.
 - For payments/monetization: plan to use platform.ledger.

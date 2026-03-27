@@ -1,8 +1,8 @@
 /**
- * @jelly/platform - Platform SDK for Jelly generated apps
+ * @jllly/platform - Platform SDK for JLLLY generated apps
  *
  * Usage:
- *   import { platform } from '@jelly/platform';
+ *   import { platform } from '@jllly/platform';
  *   const user = await platform.auth.requireUser();
  *   const posts = await platform.objects.query({ type: 'post', owner: user.user_id });
  */

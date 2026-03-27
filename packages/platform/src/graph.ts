@@ -1,5 +1,5 @@
 /**
- * @jelly/platform - Graph module
+ * @jllly/platform - Graph module
  * Relationship management between users.
  */
 

@@ -1,7 +1,7 @@
 /**
  * Infrastructure Provider Interfaces
  *
- * These interfaces decouple Jelly from Cloudflare-specific services.
+ * These interfaces decouple JLLLY from Cloudflare-specific services.
  * Each provider has at least two implementations:
  *   - A Cloudflare implementation (wrapping existing D1/R2/KV/DO/etc.)
  *   - A portable implementation (SQLite/filesystem/in-memory/Docker)

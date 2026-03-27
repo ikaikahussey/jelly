@@ -1,7 +1,7 @@
 {
-  "name": "@jelly/platform",
+  "name": "@jllly/platform",
   "version": "0.1.0",
-  "description": "Jelly platform SDK for generated apps - provides auth, graph, objects, and ledger primitives",
+  "description": "JLLLY platform SDK for generated apps - provides auth, graph, objects, and ledger primitives",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",

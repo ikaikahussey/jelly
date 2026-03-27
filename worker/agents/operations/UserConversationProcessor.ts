@@ -282,13 +282,13 @@ Some troubleshooting tips:
 ## Original Project query:
 {{query}}
 
-## PLATFORM SDK (@jelly/platform)
+## PLATFORM SDK (@jllly/platform)
 
-Generated apps have access to the \`@jelly/platform\` SDK which provides shared platform primitives. Use it instead of building custom solutions for these capabilities:
+Generated apps have access to the \`@jllly/platform\` SDK which provides shared platform primitives. Use it instead of building custom solutions for these capabilities:
 
 **Auth** - All apps share platform identity. Never implement custom auth in generated apps.
 \`\`\`typescript
-import { platform } from '@jelly/platform';
+import { platform } from '@jllly/platform';
 const user = await platform.auth.requireUser(); // redirects to login if unauthenticated
 const user = await platform.auth.getUser(); // returns null if unauthenticated
 \`\`\`
@@ -325,7 +325,7 @@ const component = await platform.marketplace.getComponent(componentId);
 \`\`\`
 
 **Rules:**
-1. Always use \`@jelly/platform\` for auth - never generate custom login/signup.
+1. Always use \`@jllly/platform\` for auth - never generate custom login/signup.
 2. When users request social features (follows, posts, feeds), use \`platform.graph\` and \`platform.objects\` - do not create custom database tables.
 3. When users request payments or monetization, use \`platform.ledger\` - do not integrate Stripe directly.
 4. The SDK is pre-installed in the build container; no npm install needed.

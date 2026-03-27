@@ -1,7 +1,7 @@
 /**
  * Kernel Middleware for Workers for Platforms dispatch layer.
  * Validates kernel JWT and injects user context into requests
- * forwarded to deployed apps via X-Jelly-User header.
+ * forwarded to deployed apps via X-Jllly-User header.
  * Enforces purchase checking for paid apps.
  */
 
@@ -13,7 +13,7 @@ const logger = createLogger('KernelMiddleware');
 
 /**
  * Process a request through kernel auth before dispatching to a deployed app.
- * Injects X-Jelly-User header with base64-encoded user JSON.
+ * Injects X-Jllly-User header with base64-encoded user JSON.
  * Records app access for the dashboard "Apps I Use" section.
  */
 export async function injectKernelUserContext(
@@ -32,7 +32,7 @@ export async function injectKernelUserContext(
     const encoded = btoa(userJson);
 
     const headers = new Headers(request.headers);
-    headers.set('X-Jelly-User', encoded);
+    headers.set('X-Jllly-User', encoded);
 
     // Record app access asynchronously (don't block the request)
     try {

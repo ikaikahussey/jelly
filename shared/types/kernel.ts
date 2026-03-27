@@ -1,6 +1,6 @@
 /**
  * Shared Kernel Types
- * Used by both frontend and @jelly/platform SDK.
+ * Used by both frontend and the @jllly/platform SDK.
  */
 
 export interface KernelUserProfile {

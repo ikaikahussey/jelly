@@ -66,7 +66,7 @@ export class StripePaymentProvider implements PaymentProvider {
             {
                 mode: 'payment',
                 'line_items[0][price_data][currency]': 'usd',
-                'line_items[0][price_data][product_data][name]': `Jelly Listing ${params.listingId}`,
+                'line_items[0][price_data][product_data][name]': `JLLLY Listing ${params.listingId}`,
                 'line_items[0][price_data][unit_amount]': String(params.amountCents),
                 'line_items[0][quantity]': '1',
                 'payment_intent_data[application_fee_amount]': String(params.platformFeeCents),

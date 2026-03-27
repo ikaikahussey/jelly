@@ -143,7 +143,7 @@ export async function kernelAuthMiddleware(
     if (!cookieHeader) return null;
 
     const cookies = parseCookies(cookieHeader);
-    const token = cookies['jelly_session'];
+    const token = cookies['jllly_session'];
     if (!token) return null;
 
     return verifyKernelJWT(env, token);

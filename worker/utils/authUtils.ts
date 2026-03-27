@@ -134,7 +134,7 @@ export function clearAuthCookie(name: string): string {
 export function clearAuthCookies(response: Response): void {
 	response.headers.append('Set-Cookie', clearAuthCookie('accessToken'));
 	response.headers.append('Set-Cookie', clearAuthCookie('auth_token'));
-	response.headers.append('Set-Cookie', clearAuthCookie('jelly_session'));
+	response.headers.append('Set-Cookie', clearAuthCookie('jllly_session'));
 }
 
 /**
@@ -205,10 +205,10 @@ export function setSecureAuthCookies(
 		}),
 	);
 
-	// Set jelly_session cookie scoped to root domain for deployed app subdomains.
+	// Set jllly_session cookie scoped to root domain for deployed app subdomains.
 	// This cookie is read by the kernel auth middleware in the dispatch layer.
 	const sessionCookieOptions: CookieOptions = {
-		name: 'jelly_session',
+		name: 'jllly_session',
 		value: accessToken,
 		maxAge: accessTokenExpiry,
 		sameSite: 'Lax',

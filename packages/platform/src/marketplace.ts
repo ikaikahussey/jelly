@@ -1,5 +1,5 @@
 /**
- * @jelly/platform - Marketplace module
+ * @jllly/platform - Marketplace module
  * Listings, purchases, and component discovery for generated apps.
  */
 

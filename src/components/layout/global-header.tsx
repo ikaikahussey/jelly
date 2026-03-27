@@ -43,7 +43,7 @@ export function GlobalHeader() {
 							<div className="flex items-center gap-3">
 								<SidebarTrigger className="h-7 w-7 jelly-btn text-text-primary hover:jelly-btn-active transition-colors duration-150 flex items-center justify-center" />
 								<span className="text-xs tracking-widest uppercase text-text-tertiary select-none hidden sm:inline">
-									JELLY.SH
+									JLLLY
 								</span>
 								{hasMaintenanceMessage && (
 									<button
@@ -62,7 +62,7 @@ export function GlobalHeader() {
 							</div>
 						) : (
 							<span className="text-xs tracking-widest uppercase text-text-tertiary select-none">
-								JELLY.SH
+								JLLLY
 							</span>
 						)}
 

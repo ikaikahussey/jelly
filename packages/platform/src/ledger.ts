@@ -1,5 +1,5 @@
 /**
- * @jelly/platform - Ledger module
+ * @jllly/platform - Ledger module
  * Balance and transaction management.
  */
 

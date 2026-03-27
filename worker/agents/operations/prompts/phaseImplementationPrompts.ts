@@ -39,8 +39,8 @@ ${PROMPT_UTILS.COMMON_DEP_DOCUMENTATION}
 </BLUEPRINT>
 
 <PLATFORM_SDK>
-The @jelly/platform SDK is pre-installed. Use it for:
-- Auth: import { platform } from '@jelly/platform'; const user = await platform.auth.requireUser();
+The @jllly/platform SDK is pre-installed. Use it for:
+- Auth: import { platform } from '@jllly/platform'; const user = await platform.auth.requireUser();
 - Social graph: platform.graph.link/unlink/query (follow, friend, subscribe, etc.)
 - Content objects: platform.objects.create/get/update/delete/query (posts, articles, listings, etc.)
 - Payments: platform.ledger.balance/transfer/history

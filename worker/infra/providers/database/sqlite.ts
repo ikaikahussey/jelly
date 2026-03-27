@@ -2,7 +2,7 @@
  * SQLite Database Provider
  *
  * Uses better-sqlite3 (Node) or bun:sqlite (Bun) with Drizzle ORM.
- * Database file lives at {dataDir}/jelly.sqlite.
+ * Database file lives at {dataDir}/jllly.sqlite.
  *
  * Note: The actual driver import is deferred to avoid bundling
  * native modules in the Cloudflare build. This file is only
@@ -16,7 +16,7 @@ export class SqliteDatabaseProvider implements DatabaseProvider {
 	private readonly dbPath: string;
 
 	constructor(dataDir: string) {
-		this.dbPath = `${dataDir}/jelly.sqlite`;
+		this.dbPath = `${dataDir}/jllly.sqlite`;
 	}
 
 	/**

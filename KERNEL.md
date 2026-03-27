@@ -1,16 +1,16 @@
-# Jelly Platform Kernel — Development Specification
+# JLLLY Platform Kernel — Development Specification
 
 ## What This Is
 
-Jelly is a fork of Cloudflare VibeSDK, an AI-powered vibe coding platform built on Cloudflare's stack (Workers, Durable Objects, D1, R2, KV, Workers for Platforms). Users describe apps in natural language and the platform generates, previews, and deploys them.
+JLLLY is a fork of Cloudflare VibeSDK, an AI-powered vibe coding platform built on Cloudflare's stack (Workers, Durable Objects, D1, R2, KV, Workers for Platforms). Users describe apps in natural language and the platform generates, previews, and deploys them.
 
-This specification defines a **platform kernel** to be built on top of Jelly. The kernel provides four primitives — identity, relationships, content objects, and a ledger — that all apps generated on the platform share. The goal is to turn Jelly from a code generation tool into an app ecosystem where generated apps share users, data, and an internal economy.
+This specification defines a **platform kernel** to be built on top of JLLLY. The kernel provides four primitives — identity, relationships, content objects, and a ledger — that all apps generated on the platform share. The goal is to turn JLLLY from a code generation tool into an app ecosystem where generated apps share users, data, and an internal economy.
 
 The kernel does not implement social features directly. It provides the substrate that apps use to implement social features, CMS features, game features, marketplace features, or anything else. The kernel is minimal and generic. Apps give the primitives meaning.
 
 ## Existing Architecture (Do Not Break)
 
-The current Jelly codebase provides:
+The current JLLLY codebase provides:
 
 - **Frontend**: React + Vite, modern UI components
 - **Backend**: Cloudflare Worker with Durable Objects for stateful AI agents
@@ -147,7 +147,7 @@ function transfer(fromUserId, toUserId, amount, platformFeePercent, referenceId)
 
 ## Kernel API
 
-Implemented as routes on the main Jelly Worker, under the `/api/kernel/` prefix. All routes require a valid JWT except where noted.
+Implemented as routes on the main JLLLY Worker, under the `/api/kernel/` prefix. All routes require a valid JWT except where noted.
 
 ### Auth
 
@@ -194,7 +194,7 @@ GET    /api/kernel/ledger/history     → ?limit=&cursor=
 
 A lightweight TypeScript client library that generated apps import. Published as an npm package available inside the build container.
 
-**Package name:** `@jelly/platform`
+**Package name:** `@jllly/platform`
 
 **Full API surface:**
 
@@ -284,7 +284,7 @@ interface LedgerEntry {
 **SDK initialization:** The SDK reads the JWT from the cookie automatically. No configuration required in generated app code.
 
 ```typescript
-import { platform } from '@jelly/platform';
+import { platform } from '@jllly/platform';
 
 const user = await platform.auth.requireUser();
 const posts = await platform.objects.query({ type: 'post', owner: user.user_id });
@@ -334,13 +334,13 @@ The AI agent's system prompt must be updated so that generated apps use the plat
 
 **Additions to the agent system prompt:**
 
-1. All generated apps must import `@jelly/platform` for auth, data, and payments.
+1. All generated apps must import `@jllly/platform` for auth, data, and payments.
 2. Generated apps must never implement their own authentication.
 3. When a user requests social features (follows, posts, feeds), the agent uses `platform.graph` and `platform.objects` — it does not create custom database tables.
 4. When a user requests payments or monetization, the agent uses `platform.ledger` — it does not integrate Stripe or any payment provider directly.
 5. The agent should be aware of the available `object_type` and `rel_type` values already in use on the platform, so it can generate apps that interoperate with existing data.
 
-**The `@jelly/platform` package must be pre-installed in the build container** (`SandboxDockerfile`) so that generated apps can import it without running `npm install` for it.
+**The `@jllly/platform` package must be pre-installed in the build container** (`SandboxDockerfile`) so that generated apps can import it without running `npm install` for it.
 
 ## Auth Middleware for Deployed Apps
 
@@ -350,7 +350,7 @@ Implemented in the Workers for Platforms dispatch layer, not in individual gener
 // In the dispatch Worker (worker/ directory)
 async function kernelAuthMiddleware(request: Request, env: Env): Promise<User | null> {
   const cookie = parseCookies(request.headers.get('Cookie'));
-  const token = cookie['jelly_session'];
+  const token = cookie['jllly_session'];
   if (!token) return null;
 
   try {
@@ -366,7 +366,7 @@ async function kernelAuthMiddleware(request: Request, env: Env): Promise<User | 
 }
 ```
 
-The dispatch Worker calls this middleware before forwarding the request to the target app's Worker. The user context is passed via a request header (`X-Jelly-User: base64(JSON)`) that the `@jelly/platform` SDK reads.
+The dispatch Worker calls this middleware before forwarding the request to the target app's Worker. The user context is passed via a request header (`X-Jllly-User: base64(JSON)`) that the `@jllly/platform` SDK reads.
 
 ## Dashboard
 
@@ -471,11 +471,11 @@ Build in this sequence. Each phase is independently useful.
 1. Modify the existing OAuth flow to create/update `kernel_users` rows.
 2. Implement JWT minting and cookie setting on the root domain.
 3. Implement the auth middleware in the Workers for Platforms dispatch layer.
-4. Implement the `X-Jelly-User` header injection.
+4. Implement the `X-Jllly-User` header injection.
 
 ### Phase 3: Platform SDK
 
-1. Create the `@jelly/platform` TypeScript package in a new `packages/platform/` directory.
+1. Create the `@jllly/platform` TypeScript package in a new `packages/platform/` directory.
 2. Implement all SDK methods as HTTP calls to `/api/kernel/*`.
 3. Add the package to the build container's `node_modules`.
 4. Write tests.
@@ -489,7 +489,7 @@ Build in this sequence. Each phase is independently useful.
 
 ### Phase 5: AI Agent Update
 
-1. Update the agent system prompt to reference the `@jelly/platform` SDK.
+1. Update the agent system prompt to reference the `@jllly/platform` SDK.
 2. Add SDK documentation to the agent's context.
 3. Test: ask the agent to build a social posting app and verify it uses `platform.objects` and `platform.graph` instead of custom storage.
 
@@ -508,7 +508,7 @@ Build in this sequence. Each phase is independently useful.
 
 ## File Locations (Where to Put Things)
 
-Following the existing Jelly project structure:
+Following the existing JLLLY project structure:
 
 ```
 migrations/

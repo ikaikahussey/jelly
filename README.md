@@ -1,23 +1,8 @@
-# 🧡 Jelly
+# JLLLY
 
-> **Social AI webapp generator** – Forked from Cloudflare VibeSDK.
+> **Social AI webapp generator** -- jllly.com
 
-<div align="center">
-
-
-## 🚀 Live Demo
-
-**[build.cloudflare.dev](https://build.cloudflare.dev)**
-
-*Explore VibeSDK Build before deploying your own stack.*
-
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/vibesdk)
-
-**👆 Click to deploy your own instance!**
-
-*Follow the setup guide below to configure required services*
-
-</div>
+Forked from Cloudflare VibeSDK. JLLLY adds a platform kernel (identity, relationships, content objects, ledger), pluggable infrastructure providers for running outside Cloudflare, and a themeable UI system.
 
 ## Star History
 

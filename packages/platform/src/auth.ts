@@ -1,6 +1,6 @@
 /**
- * @jelly/platform - Auth module
- * Reads user context from X-Jelly-User header (injected by dispatch middleware).
+ * @jllly/platform - Auth module
+ * Reads user context from X-Jllly-User header (injected by dispatch middleware).
  */
 
 import type { User } from './types';
