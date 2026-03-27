@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  jelly:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - JELLY_RUNTIME=local
+      - JELLY_DATA_DIR=/app/data
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GOOGLE_AI_STUDIO_API_KEY=${GOOGLE_AI_STUDIO_API_KEY:-}
+    volumes:
+      - jelly-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  jelly-data:

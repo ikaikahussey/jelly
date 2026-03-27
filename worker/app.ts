@@ -9,13 +9,24 @@ import { CsrfService } from './services/csrf/CsrfService';
 import { SecurityError, SecurityErrorType } from 'shared/types/errors';
 import { getGlobalConfigurableSettings } from './config';
 import { AuthConfig, setAuthLevel } from './middleware/auth/routeAuth';
+import { createInfraRegistry } from './infra/factory';
+import type { InfraRegistry } from './infra/registry';
 // import { initHonoSentry } from './observability/sentry';
 
-export function createApp(env: Env): Hono<AppEnv> {
+export function createApp(env: Env, registry?: InfraRegistry): Hono<AppEnv> {
     const app = new Hono<AppEnv>();
+
+    // Create infrastructure registry (if not provided externally)
+    const infra = registry || createInfraRegistry(env as unknown as Record<string, unknown>);
 
     // Initialize CSRF service with env
     CsrfService.init(env as unknown as Record<string, unknown>);
+
+    // Make infra registry available on all requests
+    app.use('*', async (c, next) => {
+        c.set('infra', infra);
+        await next();
+    });
 
     // Observability: Sentry error reporting & context
     // initHonoSentry(app);

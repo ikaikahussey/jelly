@@ -4,38 +4,32 @@ import react from '@vitejs/plugin-react';
 import svgr from 'vite-plugin-svgr';
 import path from 'path';
 
-import { cloudflare } from '@cloudflare/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 
+const isCloudflare = process.env.JELLY_RUNTIME !== 'local' && process.env.JELLY_RUNTIME !== 'docker';
+
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(async () => {
+	const plugins = [
+		react(),
+		svgr(),
+		tailwindcss(),
+	];
+
+	// Only include Cloudflare plugin when targeting CF runtime
+	if (isCloudflare) {
+		const { cloudflare } = await import('@cloudflare/vite-plugin');
+		plugins.splice(2, 0, cloudflare({ configPath: 'wrangler.jsonc' }));
+	}
+
+	return {
 	optimizeDeps: {
 		exclude: ['format', 'editor.all'],
 		include: ['monaco-editor/esm/vs/editor/editor.api'],
 		force: true,
 	},
 
-	// build: {
-	//     rollupOptions: {
-	//       output: {
-	//             advancedChunks: {
-	//                 groups: [{name: 'vendor', test: /node_modules/}]
-	//             }
-	//         }
-	//     }
-	// },
-	plugins: [
-		react(),
-		svgr(),
-		cloudflare({
-			configPath: 'wrangler.jsonc',
-		}),
-		tailwindcss(),
-		// sentryVitePlugin({
-		// 	org: 'cloudflare-0u',
-		// 	project: 'javascript-react',
-		// }),
-	],
+	plugins,
 
 	resolve: {
 		alias: {
@@ -68,4 +62,5 @@ export default defineConfig({
 
 	// Clear cache more aggressively
 	cacheDir: 'node_modules/.vite',
+};
 });
