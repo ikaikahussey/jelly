@@ -27,7 +27,6 @@ import {
 } from './sandboxTypes';
 
 import { createObjectLogger } from '../../logger';
-import { env } from 'cloudflare:workers'
 import { BaseSandboxService } from './BaseSandboxService';
 
 import { 
@@ -83,7 +82,7 @@ export enum AllocationStrategy {
     ONE_TO_ONE = 'one_to_one',
 }
   
-function getAutoAllocatedSandbox(sessionId: string): string {
+function getAutoAllocatedSandbox(sessionId: string, env: Record<string, unknown>): string {
     // Distribute sessions across available containers using consistent hashing
     // Convert session ID to hash for deterministic assignment
     let hash = 0;
@@ -92,7 +91,7 @@ function getAutoAllocatedSandbox(sessionId: string): string {
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
-    
+
     hash = Math.abs(hash);
 
     const max_instances = env.MAX_SANDBOX_INSTANCES ? Number(env.MAX_SANDBOX_INSTANCES) : 10;
@@ -108,11 +107,12 @@ export class SandboxSdkClient extends BaseSandboxService {
     private metadataCache = new Map<string, InstanceMetadata>();
     private sessionCache = new Map<string, ExecutionSession>();
 
-    constructor(sandboxId: string, agentId: string) {
-        if (env.ALLOCATION_STRATEGY === AllocationStrategy.MANY_TO_ONE) {
-            sandboxId = getAutoAllocatedSandbox(sandboxId);
+    constructor(sandboxId: string, agentId: string, env?: Record<string, unknown>) {
+        const envRef = env || {};
+        if (envRef.ALLOCATION_STRATEGY === AllocationStrategy.MANY_TO_ONE) {
+            sandboxId = getAutoAllocatedSandbox(sandboxId, envRef);
         }
-        super(sandboxId);
+        super(sandboxId, envRef);
         this.sandbox = this.getSandbox();
         
         this.logger = createObjectLogger(this, 'SandboxSdkClient');
@@ -141,7 +141,7 @@ export class SandboxSdkClient extends BaseSandboxService {
 
     private getSandbox(): SandboxType {
         if (!this.sandbox) {
-            this.sandbox = getSandbox(env.Sandbox, this.sandboxId);
+            this.sandbox = getSandbox(this.env.Sandbox as DurableObjectNamespace, this.sandboxId);
         }
         return this.sandbox;
     }
@@ -538,7 +538,7 @@ export class SandboxSdkClient extends BaseSandboxService {
                         uptime: Math.floor((Date.now() - new Date(metadata.startTime).getTime()) / 1000),
                         directory: instanceId,
                         serviceDirectory: instanceId,
-                        previewURL: migratePreviewUrl(metadata.previewURL, env),
+                        previewURL: migratePreviewUrl(metadata.previewURL, this.env),
                         processId: metadata.processId,
                         tunnelURL: metadata.tunnelURL,
                         // Skip file tree
@@ -699,7 +699,7 @@ export class SandboxSdkClient extends BaseSandboxService {
             // Initialize resource provisioner (skip if credentials are not available)
             let resourceProvisioner: ResourceProvisioner;
             try {
-                resourceProvisioner = new ResourceProvisioner(this.logger);
+                resourceProvisioner = new ResourceProvisioner(this.logger, this.env);
             } catch (error) {
                 this.logger.warn(`Cannot initialize resource provisioner: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 return {
@@ -916,7 +916,7 @@ export class SandboxSdkClient extends BaseSandboxService {
                 const session = await this.getInstanceSession(instanceId);
                 const wranglerConfigFile = await session.readFile(`/workspace/${instanceId}/wrangler.jsonc`);
                 if (wranglerConfigFile.success) {
-                    await env.VibecoderStore.put(this.getWranglerKVKey(instanceId), wranglerConfigFile.content);
+                    await (this.env.VibecoderStore as KVNamespace).put(this.getWranglerKVKey(instanceId), wranglerConfigFile.content);
                     this.logger.info('Wrangler configuration stored in KV', { instanceId });
                 } else {
                     this.logger.warn('Could not read wrangler.jsonc for KV storage', { instanceId });
@@ -930,7 +930,7 @@ export class SandboxSdkClient extends BaseSandboxService {
             // Allocate single port for both dev server and tunnel
             const allocatedPort = await this.allocateAvailablePort();
 
-            if (isDev(env) || env.USE_TUNNEL_FOR_PREVIEW) {
+            if (isDev(this.env) || this.env.USE_TUNNEL_FOR_PREVIEW) {
                 this.logger.info('Starting cloudflared tunnel for local development', { instanceId });
                 tunnelUrlPromise = this.startCloudflaredTunnel(instanceId, allocatedPort);
             }
@@ -953,17 +953,17 @@ export class SandboxSdkClient extends BaseSandboxService {
                     this.logger.info('Instance created successfully', { instanceId, processId, port: allocatedPort });
                         
                     // Expose the same port for preview URL
-                    const previewResult = await sandbox.exposePort(allocatedPort, { hostname: getPreviewDomain(env) });
+                    const previewResult = await sandbox.exposePort(allocatedPort, { hostname: getPreviewDomain(this.env) });
                     let previewURL = previewResult.url;
-                    if (!isDev(env)) {
-                        const previewDomain = getPreviewDomain(env);
+                    if (!isDev(this.env)) {
+                        const previewDomain = getPreviewDomain(this.env);
                         if (previewDomain) {
                             // Replace CUSTOM_DOMAIN with previewDomain in previewURL
-                            previewURL = previewURL.replace(env.CUSTOM_DOMAIN, previewDomain);
+                            previewURL = previewURL.replace(this.env.CUSTOM_DOMAIN as string, previewDomain);
                         }
                     }
 
-                    if(env.USE_TUNNEL_FOR_PREVIEW) {
+                    if(this.env.USE_TUNNEL_FOR_PREVIEW) {
                         this.logger.info('Using tunnel url instead for preview as configured', { instanceId, tunnelURL });
                         previewURL = tunnelURL;
                     }
@@ -995,7 +995,7 @@ export class SandboxSdkClient extends BaseSandboxService {
                 this.logger.info('Environment variables will be configured via session', { envVars: Object.keys(envVars) });
             }
             let instanceId: string;
-            if (env.ALLOCATION_STRATEGY === 'one_to_one') {
+            if (this.env.ALLOCATION_STRATEGY === 'one_to_one') {
                 // Multiple instances shouldn't exist in the same sandbox
 
                 // If there are already instances running in sandbox, log them
@@ -1112,7 +1112,7 @@ export class SandboxSdkClient extends BaseSandboxService {
                 serviceDirectory: instanceId,
                 fileTree,
                 runtimeErrors: runtimeErrors.errors,
-                previewURL: migratePreviewUrl(metadata.previewURL, env),
+                previewURL: migratePreviewUrl(metadata.previewURL, this.env),
                 processId: metadata.processId,
                 tunnelURL: metadata.tunnelURL,
             };
@@ -1169,7 +1169,7 @@ export class SandboxSdkClient extends BaseSandboxService {
                 pending: false,
                 isHealthy,
                 message: isHealthy ? 'Instance is running normally' : 'Instance may have issues',
-                previewURL: migratePreviewUrl(metadata.previewURL, env),
+                previewURL: migratePreviewUrl(metadata.previewURL, this.env),
                 tunnelURL: metadata.tunnelURL,
                 processId: metadata.processId
             };
@@ -1748,8 +1748,8 @@ export class SandboxSdkClient extends BaseSandboxService {
             const projectName = metadata?.projectName || instanceId;
             
             // Get credentials from environment (secure - no exposure to external processes)
-            const accountId = env.CLOUDFLARE_ACCOUNT_ID;
-            const apiToken = env.CLOUDFLARE_API_TOKEN;
+            const accountId = this.env.CLOUDFLARE_ACCOUNT_ID as string;
+            const apiToken = this.env.CLOUDFLARE_API_TOKEN as string;
             
             if (!accountId || !apiToken) {
                 throw new Error('CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN must be set in environment');
@@ -1773,7 +1773,7 @@ export class SandboxSdkClient extends BaseSandboxService {
             
             // Step 2: Parse wrangler config from KV
             this.logger.info('Reading wrangler configuration from KV');
-            const wranglerConfigContent = await env.VibecoderStore.get(this.getWranglerKVKey(instanceId));
+            const wranglerConfigContent = await (this.env.VibecoderStore as KVNamespace).get(this.getWranglerKVKey(instanceId));
             
             if (!wranglerConfigContent) {
                 // This should never happen unless KV itself has some issues
@@ -1883,15 +1883,15 @@ export class SandboxSdkClient extends BaseSandboxService {
             this.logger.info('Deploying to Cloudflare', { target });
             
             if (useDispatch) {
-                if (!('DISPATCH_NAMESPACE' in env)) {
+                if (!('DISPATCH_NAMESPACE' in this.env)) {
                     throw new Error('DISPATCH_NAMESPACE not found in environment variables, cannot deploy without dispatch namespace');
                 }
-                
-                this.logger.info('Using dispatch namespace', { dispatchNamespace: env.DISPATCH_NAMESPACE });
+
+                this.logger.info('Using dispatch namespace', { dispatchNamespace: this.env.DISPATCH_NAMESPACE });
                 await deployToDispatch(
                     {
                         ...deployConfig,
-                        dispatchNamespace: env.DISPATCH_NAMESPACE as string
+                        dispatchNamespace: this.env.DISPATCH_NAMESPACE as string
                     },
                     fileContents,
                     additionalModules,
@@ -1909,7 +1909,7 @@ export class SandboxSdkClient extends BaseSandboxService {
             }
             
             // Step 8: Determine deployment URL
-            const deployedUrl = `${this.getProtocolForHost()}://${projectName}.${getPreviewDomain(env)}`;
+            const deployedUrl = `${this.getProtocolForHost()}://${projectName}.${getPreviewDomain(this.env)}`;
             const deploymentId = projectName;
             
             this.logger.info('Deployment successful', { 
@@ -2001,7 +2001,7 @@ export class SandboxSdkClient extends BaseSandboxService {
      */
     private getProtocolForHost(): string {
         // Simple heuristic - use https for production-like domains
-        const previewDomain = getPreviewDomain(env);
+        const previewDomain = getPreviewDomain(this.env);
         if (previewDomain.includes('localhost') || previewDomain.includes('127.0.0.1')) {
             return 'http';
         }

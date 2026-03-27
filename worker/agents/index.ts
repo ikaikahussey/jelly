@@ -98,11 +98,12 @@ async function handleGeneralType(): Promise<TemplateQueryResult> {
 
 async function handleUserSelectedTemplate(
     templateName: string,
-    logger: StructuredLogger
+    logger: StructuredLogger,
+    env?: Record<string, unknown>
 ): Promise<TemplateQueryResult> {
     logger.info('Using user-specified template, bypassing AI selection', { selectedTemplate: templateName });
-    
-    const templatesResponse = await SandboxSdkClient.listTemplates();
+
+    const templatesResponse = await SandboxSdkClient.listTemplates(env);
     if (!templatesResponse?.success) {
         throw new Error(`Failed to fetch templates from sandbox service, ${templatesResponse.error}`);
     }
@@ -112,7 +113,7 @@ async function handleUserSelectedTemplate(
         throw new Error(`Specified template '${templateName}' not found in available templates`);
     }
 
-    const templateDetailsResponse = await BaseSandboxService.getTemplateDetails(matchedTemplate.name);
+    const templateDetailsResponse = await BaseSandboxService.getTemplateDetails(matchedTemplate.name, undefined, env);
     if (!templateDetailsResponse.success || !templateDetailsResponse.templateDetails) {
         throw new Error(`Failed to fetch template details for '${templateName}'`);
     }
@@ -136,7 +137,7 @@ async function handleUserSelectedTemplate(
 async function handleAITemplateSelection(args: Omit<TemplateQueryArgs, 'selectedTemplate'>): Promise<TemplateQueryResult> {
     const { env, inferenceContext, query, projectType, images, logger } = args;
 
-    const templatesResponse = await SandboxSdkClient.listTemplates();
+    const templatesResponse = await SandboxSdkClient.listTemplates(env as Record<string, unknown>);
     if (!templatesResponse?.success) {
         throw new Error(`Failed to fetch templates from sandbox service, ${templatesResponse.error}`);
     }
@@ -164,7 +165,7 @@ async function handleAITemplateSelection(args: Omit<TemplateQueryArgs, 'selected
         throw new Error('Selected template not found');
     }
 
-    const templateDetailsResponse = await BaseSandboxService.getTemplateDetails(matchedTemplate.name);
+    const templateDetailsResponse = await BaseSandboxService.getTemplateDetails(matchedTemplate.name, undefined, env as Record<string, unknown>);
     if (!templateDetailsResponse.success || !templateDetailsResponse.templateDetails) {
         logger.error('Failed to fetch files', { templateDetailsResponse });
         throw new Error('Failed to fetch files');
@@ -193,7 +194,7 @@ export async function getTemplateForQuery(
 
     // Flow 2: User-specified template - bypass AI selection
     if (selectedTemplate && selectedTemplate !== 'auto') {
-        return handleUserSelectedTemplate(selectedTemplate, logger);
+        return handleUserSelectedTemplate(selectedTemplate, logger, env as Record<string, unknown>);
     }
 
     // Flow 3: AI template selection

@@ -33,7 +33,6 @@ import {
 } from './sandboxTypes';
   
 import { createObjectLogger, StructuredLogger } from '../../logger';
-import { env } from 'cloudflare:workers'
 import { ZipExtractor } from './zipExtractor';
 import { FileTreeBuilder } from './fileTreeBuilder';
 import { DeploymentTarget } from 'worker/agents/core/types';
@@ -58,10 +57,12 @@ const templateDetailsCache: Record<string, TemplateDetails> = {};
 export abstract class BaseSandboxService {
     protected logger: StructuredLogger;
     protected sandboxId: string;
-  
-    constructor(sandboxId: string) {
+    protected env: Record<string, unknown>;
+
+    constructor(sandboxId: string, env?: Record<string, unknown>) {
       this.logger = createObjectLogger(this, 'BaseSandboxService');
       this.sandboxId = sandboxId;
+      this.env = env || {};
     }
   
     // Any async startup tasks should be done here
@@ -75,9 +76,10 @@ export abstract class BaseSandboxService {
      * List all available templates
      * Returns: { success: boolean, templates: [...], count: number, error?: string }
      */
-    static async listTemplates(): Promise<TemplateListResponse> {
+    static async listTemplates(env?: Record<string, unknown>): Promise<TemplateListResponse> {
         try {
-            const response = await env.TEMPLATES_BUCKET.get('template_catalog.json');
+            const bucket = env?.TEMPLATES_BUCKET as { get(key: string): Promise<{ json(): Promise<unknown> } | null> };
+            const response = await bucket.get('template_catalog.json');
             if (response === null) {
                 throw new Error(`Failed to fetch template catalog: Template catalog not found`);
             }
@@ -116,7 +118,7 @@ export abstract class BaseSandboxService {
      * Downloads zip from R2, extracts in memory, and returns all files with metadata
      * Returns: { success: boolean, templateDetails?: {...}, error?: string }
      */
-    static async getTemplateDetails(templateName: string, downloadDir?: string): Promise<TemplateDetailsResponse> {
+    static async getTemplateDetails(templateName: string, downloadDir?: string, env?: Record<string, unknown>): Promise<TemplateDetailsResponse> {
         try {
             if (templateDetailsCache[templateName]) {
                 console.log(`Template details for template: ${templateName} found in cache`);
@@ -127,7 +129,8 @@ export abstract class BaseSandboxService {
             }
             // Download template zip from R2
             const downloadUrl = downloadDir ? `${downloadDir}/${templateName}.zip` : `${templateName}.zip`;
-            const r2Object = await env.TEMPLATES_BUCKET.get(downloadUrl);
+            const bucket = env?.TEMPLATES_BUCKET as { get(key: string): Promise<{ arrayBuffer(): Promise<ArrayBuffer> } | null> };
+            const r2Object = await bucket.get(downloadUrl);
               
             if (!r2Object) {
                 throw new Error(`Template '${templateName}' not found in bucket`);
@@ -157,7 +160,7 @@ export abstract class BaseSandboxService {
             const importantFiles = importantFile ? JSON.parse(importantFile.fileContents) : [];
             
             // Get template info from catalog
-            const catalogResponse = await BaseSandboxService.listTemplates();
+            const catalogResponse = await BaseSandboxService.listTemplates(env);
             const catalogInfo = catalogResponse.success 
                 ? catalogResponse.templates.find(t => t.name === templateName)
                 : null;

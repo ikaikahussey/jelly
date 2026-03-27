@@ -1,8 +1,8 @@
 import type { ToolDefinition } from './types';
 import { StructuredLogger } from '../../logger';
 import { RenderToolCall } from '../operations/UserConversationProcessor';
-import { toolWebSearchDefinition } from './toolkit/web-search';
-import { toolFeedbackDefinition } from './toolkit/feedback';
+import { createWebSearchTool } from './toolkit/web-search';
+import { createFeedbackTool } from './toolkit/feedback';
 import { createQueueRequestTool } from './toolkit/queue-request';
 import { createGetLogsTool } from './toolkit/get-logs';
 import { createDeployPreviewTool } from './toolkit/deploy-preview';
@@ -44,10 +44,12 @@ export function buildTools(
     logger: StructuredLogger,
     toolRenderer: RenderToolCall,
     streamCb: (chunk: string) => void,
+    env?: Record<string, unknown>,
 ): ToolDefinition<any, any>[] {
+    const envRef = env || {};
     return [
-        toolWebSearchDefinition,
-        toolFeedbackDefinition,
+        createWebSearchTool(envRef as { SERPAPI_KEY?: string }),
+        createFeedbackTool(envRef as { SENTRY_DSN?: string }),
         createQueueRequestTool(agent, logger),
         createGetLogsTool(agent, logger),
         createDeployPreviewTool(agent, logger),

@@ -32,7 +32,6 @@ import {
 } from './sandboxTypes';
 import { BaseSandboxService } from "./BaseSandboxService";
 import { DeploymentTarget } from 'worker/agents/core/types';
-import { env } from 'cloudflare:workers'
 import z from 'zod';
 import { FileOutputType } from 'worker/agents/schemas';
 
@@ -53,8 +52,11 @@ export class RemoteSandboxServiceClient extends BaseSandboxService{
         RemoteSandboxServiceClient.token = token;
     }
 
-    constructor(sandboxId: string) {
-        super(sandboxId)
+    constructor(sandboxId: string, env?: Record<string, unknown>) {
+        super(sandboxId, env);
+        if (env?.SANDBOX_SERVICE_URL && env?.SANDBOX_SERVICE_API_KEY) {
+            RemoteSandboxServiceClient.init(env.SANDBOX_SERVICE_URL as string, env.SANDBOX_SERVICE_API_KEY as string);
+        }
         this.logger.info('RemoteSandboxServiceClient initialized', { sandboxId: this.sandboxId });
     }
 
@@ -251,4 +253,4 @@ export class RemoteSandboxServiceClient extends BaseSandboxService{
     }
 }
 
-RemoteSandboxServiceClient.init(env.SANDBOX_SERVICE_URL, env.SANDBOX_SERVICE_API_KEY);
+// Init is now called in the constructor with env parameters

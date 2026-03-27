@@ -1,4 +1,3 @@
-import { env } from 'cloudflare:workers';
 import { tool, t } from '../types';
 
 interface SerpApiResponse {
@@ -97,8 +96,8 @@ const formatSearchResults = (
 async function performWebSearch(
     query: string,
     numResults = 5,
+    apiKey?: string,
 ): Promise<string> {
-    const apiKey = env.SERPAPI_KEY;
     if (!apiKey) {
         return `🔍 Web search requires SerpAPI key. Get one at https://serpapi.com/\nFallback: https://www.google.com/search?q=${encodeURIComponent(query)}`;
     }
@@ -203,29 +202,34 @@ type WebSearchArgs = {
 
 type WebSearchResult = { content?: string; error?: string };
 
-const toolWebSearch = async (args: WebSearchArgs): Promise<WebSearchResult> => {
-	const { query, url, num_results } = args;
-	if (typeof url === 'string') {
-		const content = await fetchWebContent(url);
-		return { content };
-	}
-	if (typeof query === 'string') {
-		const content = await performWebSearch(
-			query,
-			num_results as number
-		);
-		return { content };
-	}
-	return { error: 'Either query or url parameter is required' };
-};
+function createWebSearchImplementation(envRef: { SERPAPI_KEY?: string }) {
+	return async (args: WebSearchArgs): Promise<WebSearchResult> => {
+		const { query, url, num_results } = args;
+		if (typeof url === 'string') {
+			const content = await fetchWebContent(url);
+			return { content };
+		}
+		if (typeof query === 'string') {
+			const content = await performWebSearch(
+				query,
+				num_results as number,
+				envRef.SERPAPI_KEY,
+			);
+			return { content };
+		}
+		return { error: 'Either query or url parameter is required' };
+	};
+}
 
-export const toolWebSearchDefinition = tool({
-	name: 'web_search',
-	description: 'Search the web using Google or fetch content from a specific URL',
-	args: {
-		query: t.string().optional().describe('Search query for Google search'),
-		url: t.string().optional().describe('Specific URL to fetch content from (alternative to search)'),
-		num_results: t.number().default(5).describe('Number of search results to return (default: 5, max: 10)'),
-	},
-	run: toolWebSearch,
-});
+export function createWebSearchTool(env: { SERPAPI_KEY?: string }) {
+	return tool({
+		name: 'web_search',
+		description: 'Search the web using Google or fetch content from a specific URL',
+		args: {
+			query: t.string().optional().describe('Search query for Google search'),
+			url: t.string().optional().describe('Specific URL to fetch content from (alternative to search)'),
+			num_results: t.number().default(5).describe('Number of search results to return (default: 5, max: 10)'),
+		},
+		run: createWebSearchImplementation(env),
+	});
+}

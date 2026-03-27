@@ -14,6 +14,9 @@ import { AuthConfig, setAuthLevel } from './middleware/auth/routeAuth';
 export function createApp(env: Env): Hono<AppEnv> {
     const app = new Hono<AppEnv>();
 
+    // Initialize CSRF service with env
+    CsrfService.init(env as unknown as Record<string, unknown>);
+
     // Observability: Sentry error reporting & context
     // initHonoSentry(app);
 

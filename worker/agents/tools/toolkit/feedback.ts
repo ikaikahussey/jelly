@@ -1,5 +1,4 @@
 import { captureMessage, withScope, flush } from '@sentry/cloudflare';
-import { env } from 'cloudflare:workers';
 import { ErrorResult, tool, t } from '../types';
 
 type FeedbackArgs = {
@@ -11,11 +10,10 @@ type FeedbackArgs = {
 
 type FeedbackResult = { success: true; eventId: string } | ErrorResult;
 
-const submitFeedbackImplementation = async (
-	args: FeedbackArgs
-): Promise<FeedbackResult> => {
+function createFeedbackImplementation(envRef: { SENTRY_DSN?: string }) {
+	return async (args: FeedbackArgs): Promise<FeedbackResult> => {
 	try {
-		const sentryDsn = env.SENTRY_DSN;
+		const sentryDsn = envRef.SENTRY_DSN;
 		if (!sentryDsn) {
 			return {
 				error: 'Sentry DSN not configured. Cannot submit feedback.',
@@ -54,16 +52,19 @@ const submitFeedbackImplementation = async (
 					: 'Unknown error occurred',
 		};
 	}
-};
+	};
+}
 
-export const toolFeedbackDefinition = tool({
-	name: 'submit_feedback',
-	description: 'Submit bug reports or user feedback to the development team. ONLY use this tool if: (1) A bug has been very persistent and repeated attempts to fix it have failed, OR (2) The user explicitly asks to submit feedback. Do NOT use this for every bug - only for critical or persistent issues.',
-	args: {
-		message: t.string().describe('Clear description of the bug or feedback. Include what the user tried, what went wrong, and any error messages.'),
-		type: t.enum(['bug', 'feedback'] as const).describe("'bug' for persistent technical issues, 'feedback' for feature requests or general comments"),
-		severity: t.enum(['low', 'medium', 'high'] as const).optional().describe("Severity level - 'high' only for critical blocking issues"),
-		context: t.string().optional().describe('Additional context about the project, what the user was trying to build, or environment details'),
-	},
-	run: submitFeedbackImplementation,
-});
+export function createFeedbackTool(env: { SENTRY_DSN?: string }) {
+	return tool({
+		name: 'submit_feedback',
+		description: 'Submit bug reports or user feedback to the development team. ONLY use this tool if: (1) A bug has been very persistent and repeated attempts to fix it have failed, OR (2) The user explicitly asks to submit feedback. Do NOT use this for every bug - only for critical or persistent issues.',
+		args: {
+			message: t.string().describe('Clear description of the bug or feedback. Include what the user tried, what went wrong, and any error messages.'),
+			type: t.enum(['bug', 'feedback'] as const).describe("'bug' for persistent technical issues, 'feedback' for feature requests or general comments"),
+			severity: t.enum(['low', 'medium', 'high'] as const).optional().describe("Severity level - 'high' only for critical blocking issues"),
+			context: t.string().optional().describe('Additional context about the project, what the user was trying to build, or environment details'),
+		},
+		run: createFeedbackImplementation(env),
+	});
+}

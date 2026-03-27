@@ -1,5 +1,4 @@
 import { StructuredLogger } from '../../logger';
-import { env } from 'cloudflare:workers';
 
 export interface ResourceProvisionResult {
     success: boolean;
@@ -37,10 +36,10 @@ export class ResourceProvisioner {
     private accountId: string;
     private apiToken: string;
 
-    constructor(logger: StructuredLogger) {
+    constructor(logger: StructuredLogger, env: Record<string, unknown>) {
         this.logger = logger;
-        this.accountId = env.CLOUDFLARE_ACCOUNT_ID;
-        this.apiToken = env.CLOUDFLARE_API_TOKEN;
+        this.accountId = env.CLOUDFLARE_ACCOUNT_ID as string;
+        this.apiToken = env.CLOUDFLARE_API_TOKEN as string;
         
         if (!this.accountId || !this.apiToken) {
             this.logger.error('Missing required environment variables for resource provisioning', {

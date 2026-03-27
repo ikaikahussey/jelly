@@ -7,8 +7,6 @@ import {
     LiteModels,
     RegularModels,
 } from "./config.types";
-import { env } from 'cloudflare:workers';
-
 // Common configs - these are good defaults
 const COMMON_AGENT_CONFIGS = {
     screenshotAnalysis: {
@@ -181,9 +179,13 @@ const DEFAULT_AGENT_CONFIG: AgentConfig = {
     },
 };
 
-export const AGENT_CONFIG: AgentConfig = env.PLATFORM_MODEL_PROVIDERS 
-    ? PLATFORM_AGENT_CONFIG 
-    : DEFAULT_AGENT_CONFIG;
+/** Default config used when no env is available (fallback) */
+export const AGENT_CONFIG: AgentConfig = DEFAULT_AGENT_CONFIG;
+
+/** Get the agent config, checking env for platform overrides */
+export function getAgentConfig(env?: { PLATFORM_MODEL_PROVIDERS?: unknown }): AgentConfig {
+    return env?.PLATFORM_MODEL_PROVIDERS ? PLATFORM_AGENT_CONFIG : DEFAULT_AGENT_CONFIG;
+}
 
 
 export const AGENT_CONSTRAINTS: Map<AgentActionKey, AgentConstraintConfig> = new Map([
