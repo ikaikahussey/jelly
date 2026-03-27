@@ -92,8 +92,12 @@ export function createApp(env: Env, registry?: InfraRegistry): Hono<AppEnv> {
         const config = await getGlobalConfigurableSettings(env);
         c.set('config', config);
 
-        // Apply global rate limit middleware. Should this be moved after setupRoutes so that maybe 'user' is available?
-        await RateLimitService.enforceGlobalApiRateLimit(env, c.get('config').security.rateLimit, null, c.req.raw)
+        // Apply global rate limit middleware (skip if DO bindings unavailable)
+        try {
+            await RateLimitService.enforceGlobalApiRateLimit(env, c.get('config').security.rateLimit, null, c.req.raw);
+        } catch {
+            // Rate limiting unavailable (e.g., no DO bindings on local runtime)
+        }
         await next();
     })
 
@@ -103,9 +107,46 @@ export function createApp(env: Env, registry?: InfraRegistry): Hono<AppEnv> {
     // Now setup all the routes
     setupRoutes(app);
 
-    // Add not found route to redirect to ASSETS
-    app.notFound((c) => {
-        return c.env.ASSETS.fetch(c.req.raw);
+    // Add not found route to redirect to ASSETS (CF) or serve static files (local)
+    app.notFound(async (c) => {
+        if (c.env.ASSETS?.fetch) {
+            return c.env.ASSETS.fetch(c.req.raw);
+        }
+        // On non-CF runtimes, try to serve from dist/ directory
+        try {
+            const url = new URL(c.req.url);
+            let filePath = url.pathname === '/' ? '/index.html' : url.pathname;
+            const { readFile } = await import('node:fs/promises');
+            const { join, extname } = await import('node:path');
+            const distDir = join(process.cwd(), 'dist');
+            const fullPath = join(distDir, filePath);
+
+            // Prevent directory traversal
+            if (!fullPath.startsWith(distDir)) {
+                return c.text('Forbidden', 403);
+            }
+
+            try {
+                const data = await readFile(fullPath);
+                const ext = extname(filePath);
+                const mimeTypes: Record<string, string> = {
+                    '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
+                    '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml',
+                    '.ico': 'image/x-icon', '.woff2': 'font/woff2',
+                };
+                return new Response(data, {
+                    headers: { 'Content-Type': mimeTypes[ext] || 'application/octet-stream' },
+                });
+            } catch {
+                // SPA fallback: serve index.html
+                const indexData = await readFile(join(distDir, 'index.html'));
+                return new Response(indexData, {
+                    headers: { 'Content-Type': 'text/html' },
+                });
+            }
+        } catch {
+            return c.text('Not Found', 404);
+        }
     });
     return app;
 }

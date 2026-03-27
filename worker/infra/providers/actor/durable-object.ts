@@ -34,24 +34,27 @@ export class DurableObjectActorProvider implements ActorProvider {
 		// This handle is primarily used for routing requests to the right DO.
 		return {
 			id,
-			get state() {
+			get state(): TState {
 				throw new Error('Direct state access not available on DO stubs. Send a request to the DO instead.');
 			},
-			setState() {
+			set state(_val: TState) {
+				throw new Error('Direct state set not available on DO stubs. Send a request to the DO instead.');
+			},
+			setState(_patch: Partial<TState>) {
 				throw new Error('Direct setState not available on DO stubs. Send a request to the DO instead.');
 			},
 			get sql() {
 				throw new Error('Direct SQL access not available on DO stubs. Send a request to the DO instead.');
 			},
-			getWebSockets() {
+			getWebSockets(): WebSocket[] {
 				throw new Error('WebSocket access not available on DO stubs. Connect via the DO URL instead.');
 			},
-			broadcast() {
+			broadcast(_message: string) {
 				throw new Error('Broadcast not available on DO stubs. Send a request to the DO instead.');
 			},
 			/** Access the raw DO stub for making fetch/RPC calls */
 			_stub: stub,
-		} as ActorHandle<TState> & { _stub: DurableObjectStub };
+		} as unknown as ActorHandle<TState>;
 	}
 
 	private resolveBinding(namespace: string): unknown {

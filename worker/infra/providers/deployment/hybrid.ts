@@ -11,11 +11,9 @@
 import type { DeploymentProvider, DeployResult } from '../../types';
 
 export class HybridDeploymentProvider implements DeploymentProvider {
-	private readonly dataDir: string;
 	private readonly deployDir: string;
 
 	constructor(dataDir: string) {
-		this.dataDir = dataDir;
 		this.deployDir = `${dataDir}/deployments`;
 	}
 

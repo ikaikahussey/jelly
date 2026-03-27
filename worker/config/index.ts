@@ -106,7 +106,11 @@ export async function getGlobalConfigurableSettings(env: Env): Promise<GlobalCon
     };
     
     try {
-        // Try to fetch override config from KV
+        // Try to fetch override config from KV (skip if KV unavailable on non-CF runtimes)
+        if (!env.VibecoderStore) {
+            cachedConfig = defaultConfig;
+            return defaultConfig;
+        }
         const storedConfigJson = await env.VibecoderStore.get(CONFIG_KEY);
         
         if (!storedConfigJson) {

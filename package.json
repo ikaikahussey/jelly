@@ -37,8 +37,8 @@
 		"knip:production": "knip --production",
 		"knip:dependencies": "knip --dependencies",
 		"knip:exports": "knip --exports",
-		"server:dev": "JELLY_RUNTIME=local bun --watch server/index.ts",
-		"server:start": "JELLY_RUNTIME=local bun server/index.ts"
+		"server:dev": "JELLY_RUNTIME=local npx tsx --import ./server/register.ts --watch server/index.ts",
+		"server:start": "JELLY_RUNTIME=local npx tsx --import ./server/register.ts server/index.ts"
 	},
 	"dependencies": {
 		"@ashishkumar472/cf-git": "1.0.5",
@@ -49,6 +49,7 @@
 		"@cloudflare/containers": "^0.0.28",
 		"@cloudflare/sandbox": "0.5.6",
 		"@commitlint/config-conventional": "^20.2.0",
+		"@hono/node-server": "^1.19.11",
 		"@noble/ciphers": "^1.3.0",
 		"@octokit/rest": "^22.0.1",
 		"@radix-ui/react-accordion": "^1.2.12",
@@ -81,10 +82,12 @@
 		"@sentry/react": "^10.30.0",
 		"@simplewebauthn/browser": "^13.2.2",
 		"@types/argon2-browser": "^1.18.4",
+		"@types/better-sqlite3": "^7.6.13",
 		"@types/mdast": "^4.0.4",
 		"@vitejs/plugin-react": "^5.1.2",
 		"acorn": "^8.14.0",
 		"agents": "^0.2.32",
+		"better-sqlite3": "^12.8.0",
 		"class-variance-authority": "^0.7.1",
 		"cli-table3": "^0.6.5",
 		"cloudflare": "^4.5.0",

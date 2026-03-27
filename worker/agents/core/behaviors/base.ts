@@ -154,7 +154,7 @@ export abstract class BaseCodingBehavior<TState extends BaseProjectState>
                 return;
             }
             this.logger.info(`Loading template details for: ${this.state.templateName}`);
-            const results = await BaseSandboxService.getTemplateDetails(this.state.templateName, undefined, this.env as Record<string, unknown>);
+            const results = await BaseSandboxService.getTemplateDetails(this.state.templateName, undefined, this.env as unknown as Record<string, unknown>);
             if (!results.success || !results.templateDetails) {
                 throw new Error(`Failed to get template details for: ${this.state.templateName}`);
             }
