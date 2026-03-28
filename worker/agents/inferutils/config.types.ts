@@ -337,7 +337,64 @@ const MODELS_MASTER = {
             creditCost: 8, // $0.22
             contextSize: 262144, // 256K Context
         },
-    }
+    },
+
+    // --- Ollama Models (local/self-hosted) ---
+    OLLAMA_QWEN3: {
+        id: 'ollama/qwen3:32b',
+        config: {
+            name: 'Qwen 3 32B (Ollama)',
+            size: ModelSize.REGULAR,
+            provider: 'ollama',
+            creditCost: 0,
+            contextSize: 131072,
+            directOverride: true,
+        },
+    },
+    OLLAMA_QWEN3_CODER: {
+        id: 'ollama/qwen3-coder:32b',
+        config: {
+            name: 'Qwen 3 Coder 32B (Ollama)',
+            size: ModelSize.REGULAR,
+            provider: 'ollama',
+            creditCost: 0,
+            contextSize: 131072,
+            directOverride: true,
+        },
+    },
+    OLLAMA_DEVSTRAL: {
+        id: 'ollama/devstral',
+        config: {
+            name: 'Devstral (Ollama)',
+            size: ModelSize.REGULAR,
+            provider: 'ollama',
+            creditCost: 0,
+            contextSize: 131072,
+            directOverride: true,
+        },
+    },
+    OLLAMA_CODELLAMA: {
+        id: 'ollama/codellama:70b',
+        config: {
+            name: 'Code Llama 70B (Ollama)',
+            size: ModelSize.LARGE,
+            provider: 'ollama',
+            creditCost: 0,
+            contextSize: 131072,
+            directOverride: true,
+        },
+    },
+    OLLAMA_CUSTOM: {
+        id: 'ollama/custom',
+        config: {
+            name: 'Ollama Custom Model',
+            size: ModelSize.REGULAR,
+            provider: 'ollama',
+            creditCost: 0,
+            contextSize: 131072,
+            directOverride: true,
+        },
+    },
 } as const;
 
 /**

@@ -179,11 +179,104 @@ const DEFAULT_AGENT_CONFIG: AgentConfig = {
     },
 };
 
+//======================================================================================
+// Ollama / self-hosted config (zero cost, runs on your own GPU)
+//======================================================================================
+/* Set OLLAMA_BASE_URL env var to point at your Ollama instance.
+   Set OLLAMA_MODEL to override the default model (default: qwen3:32b).
+   Works with any Ollama model that supports OpenAI-compatible chat completions. */
+const OLLAMA_SHARED_CONFIG = {
+    reasoning_effort: undefined,
+    max_tokens: 32000,
+    temperature: 0.7,
+    fallbackModel: AIModels.OLLAMA_QWEN3,
+};
+
+function buildOllamaConfig(model: string): AgentConfig {
+    const ollamaModel = `ollama/${model}` as AIModels;
+    return {
+        screenshotAnalysis: {
+            name: AIModels.DISABLED,
+            reasoning_effort: undefined,
+            max_tokens: 8000,
+            temperature: 1,
+            fallbackModel: ollamaModel,
+        },
+        realtimeCodeFixer: {
+            name: ollamaModel,
+            reasoning_effort: undefined,
+            max_tokens: 32000,
+            temperature: 0.2,
+            fallbackModel: ollamaModel,
+        },
+        fastCodeFixer: {
+            name: AIModels.DISABLED,
+            reasoning_effort: undefined,
+            max_tokens: 32000,
+            temperature: 0.0,
+            fallbackModel: ollamaModel,
+        },
+        templateSelection: {
+            name: ollamaModel,
+            max_tokens: 2000,
+            fallbackModel: ollamaModel,
+            temperature: 0.6,
+        },
+        blueprint: {
+            name: ollamaModel,
+            ...OLLAMA_SHARED_CONFIG,
+            max_tokens: 20000,
+        },
+        projectSetup: {
+            name: ollamaModel,
+            ...OLLAMA_SHARED_CONFIG,
+        },
+        phaseGeneration: {
+            name: ollamaModel,
+            ...OLLAMA_SHARED_CONFIG,
+        },
+        firstPhaseImplementation: {
+            name: ollamaModel,
+            ...OLLAMA_SHARED_CONFIG,
+            max_tokens: 48000,
+        },
+        phaseImplementation: {
+            name: ollamaModel,
+            ...OLLAMA_SHARED_CONFIG,
+            max_tokens: 48000,
+        },
+        conversationalResponse: {
+            name: ollamaModel,
+            ...OLLAMA_SHARED_CONFIG,
+            max_tokens: 4000,
+        },
+        deepDebugger: {
+            name: ollamaModel,
+            ...OLLAMA_SHARED_CONFIG,
+        },
+        fileRegeneration: {
+            name: ollamaModel,
+            ...OLLAMA_SHARED_CONFIG,
+        },
+        agenticProjectBuilder: {
+            name: ollamaModel,
+            ...OLLAMA_SHARED_CONFIG,
+        },
+    };
+}
+
 /** Default config used when no env is available (fallback) */
 export const AGENT_CONFIG: AgentConfig = DEFAULT_AGENT_CONFIG;
 
 /** Get the agent config, checking env for platform overrides */
-export function getAgentConfig(env?: { PLATFORM_MODEL_PROVIDERS?: unknown }): AgentConfig {
+export function getAgentConfig(env?: {
+    PLATFORM_MODEL_PROVIDERS?: unknown;
+    OLLAMA_BASE_URL?: string;
+    OLLAMA_MODEL?: string;
+}): AgentConfig {
+    if (env?.OLLAMA_BASE_URL) {
+        return buildOllamaConfig(env.OLLAMA_MODEL ?? 'qwen3:32b');
+    }
     return env?.PLATFORM_MODEL_PROVIDERS ? PLATFORM_AGENT_CONFIG : DEFAULT_AGENT_CONFIG;
 }
 

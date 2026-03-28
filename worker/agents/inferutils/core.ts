@@ -303,6 +303,11 @@ export async function getConfigurationForModel(
                     baseURL: 'https://api.anthropic.com/v1/',
                     apiKey: env.ANTHROPIC_API_KEY,
                 };
+            case 'ollama':
+                return {
+                    baseURL: `${(env as Record<string, string>).OLLAMA_BASE_URL ?? 'http://localhost:11434'}/v1`,
+                    apiKey: 'ollama',
+                };
             default:
                 providerForcedOverride = modelConfig.provider as AIGatewayProviders;
                 break;
@@ -555,7 +560,8 @@ export async function infer<OutputSchema extends z.AnyZodObject>({
         const userConfig = await getUserConfigurableSettings(env, metadata.userId)
         // Maybe in the future can expand using config object for other stuff like global model configs?
         await RateLimitService.enforceLLMCallsRateLimit(env, userConfig.security.rateLimit, metadata.userId, modelName)
-        const modelConfig = AI_MODEL_CONFIG[modelName as AIModels];
+        const modelConfig = AI_MODEL_CONFIG[modelName as AIModels]
+            ?? (modelName.startsWith('ollama/') ? AI_MODEL_CONFIG[AIModels.OLLAMA_CUSTOM] : undefined);
 
         const { apiKey, baseURL, defaultHeaders } = await getConfigurationForModel(
             modelConfig,
@@ -567,6 +573,11 @@ export async function infer<OutputSchema extends z.AnyZodObject>({
 
         // Remove [*.] from model name
         modelName = modelName.replace(/\[.*?\]/, '');
+
+        // Strip provider prefix for Ollama (API expects bare model name like "qwen3:32b")
+        if (modelName.startsWith('ollama/')) {
+            modelName = modelName.slice('ollama/'.length);
+        }
 
         const client = new OpenAI({ apiKey, baseURL: baseURL, defaultHeaders });
         const schemaObj =
