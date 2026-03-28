@@ -303,11 +303,13 @@ export async function getConfigurationForModel(
                     baseURL: 'https://api.anthropic.com/v1/',
                     apiKey: env.ANTHROPIC_API_KEY,
                 };
-            case 'ollama':
+            case 'ollama': {
+                const envRecord = env as Record<string, string>;
                 return {
-                    baseURL: `${(env as Record<string, string>).OLLAMA_BASE_URL ?? 'http://localhost:11434'}/v1`,
-                    apiKey: 'ollama',
+                    baseURL: `${envRecord.OLLAMA_BASE_URL ?? 'http://localhost:11434'}/v1`,
+                    apiKey: envRecord.OLLAMA_API_KEY ?? 'ollama',
                 };
+            }
             default:
                 providerForcedOverride = modelConfig.provider as AIGatewayProviders;
                 break;
