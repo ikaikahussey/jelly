@@ -1,6 +1,9 @@
 FROM node:22-slim AS base
 WORKDIR /app
 
+# Install build tools for native modules (better-sqlite3)
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+
 # Install dependencies
 FROM base AS deps
 COPY package.json package-lock.json ./
@@ -15,7 +18,7 @@ ENV JELLY_RUNTIME=local
 RUN npx vite build
 
 # Production image
-FROM base AS runner
+FROM node:22-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -23,7 +26,7 @@ ENV JELLY_RUNTIME=local
 ENV JELLY_DATA_DIR=/app/data
 ENV PORT=3000
 
-# Copy production dependencies
+# Copy production dependencies (includes pre-built native modules)
 COPY --from=deps /app/node_modules ./node_modules
 
 # Copy built frontend
