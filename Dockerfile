@@ -7,12 +7,12 @@ RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt
 # Install dependencies
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts && npm rebuild
 
 # Build frontend (needs all deps including devDependencies)
 FROM base AS builder
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts && npm rebuild
 COPY . .
 ENV JELLY_RUNTIME=local
 RUN npx vite build
