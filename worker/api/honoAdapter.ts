@@ -32,11 +32,18 @@ export function adaptController<T extends BaseController>(
             pathParams: c.req.param(),
             queryParams: new URL(c.req.url).searchParams,
         };
+        // executionCtx is a CF Workers concept; provide a no-op shim on Node.js
+        let execCtx: ExecutionContext;
+        try {
+            execCtx = c.executionCtx;
+        } catch {
+            execCtx = { waitUntil: () => {}, passThroughOnException: () => {} } as ExecutionContext;
+        }
         return await method.call(
             controller,
             c.req.raw,
             c.env,
-            c.executionCtx,
+            execCtx,
             routeContext
         );
     };
