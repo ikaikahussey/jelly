@@ -45,6 +45,4 @@ RUN mkdir -p /app/data/storage /app/data/actors/agents /app/data/deployments
 
 EXPOSE 3000
 
-VOLUME ["/app/data"]
-
 CMD ["npx", "tsx", "--tsconfig", "tsconfig.server.json", "--import", "./server/register.ts", "server/index.ts"]
