@@ -11,6 +11,7 @@ import { SessionService } from './SessionService';
 import { PasswordService } from '../../utils/passwordService';
 import { GoogleOAuthProvider } from '../../services/oauth/google';
 import { GitHubOAuthProvider } from '../../services/oauth/github';
+import { AppleOAuthProvider } from '../../services/oauth/apple';
 import { BaseOAuthProvider } from '../../services/oauth/base';
 import { 
     SecurityError, 
@@ -283,6 +284,8 @@ export class AuthService extends BaseService {
                 return GoogleOAuthProvider.create(this.env, url);
             case 'github':
                 return GitHubOAuthProvider.create(this.env, url);
+            case 'apple':
+                return AppleOAuthProvider.create(this.env, url);
             default:
                 throw new SecurityError(
                     SecurityErrorType.INVALID_INPUT,

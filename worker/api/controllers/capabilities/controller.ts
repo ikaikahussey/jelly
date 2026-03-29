@@ -35,15 +35,16 @@ export class CapabilitiesController extends BaseController {
 		const config = env.PLATFORM_CAPABILITIES;
 
 		// Build feature list by merging defaults with enabled status from config
+		// Fall back to all-enabled when PLATFORM_CAPABILITIES is not set (e.g. local runtime)
 		const features: FeatureDefinition[] = [
-			{ ...DEFAULT_FEATURE_DEFINITIONS.app, enabled: config.features.app.enabled },
-			{ ...DEFAULT_FEATURE_DEFINITIONS.presentation, enabled: config.features.presentation.enabled },
-			{ ...DEFAULT_FEATURE_DEFINITIONS.general, enabled: config.features.general.enabled },
+			{ ...DEFAULT_FEATURE_DEFINITIONS.app, enabled: config?.features?.app?.enabled ?? true },
+			{ ...DEFAULT_FEATURE_DEFINITIONS.presentation, enabled: config?.features?.presentation?.enabled ?? true },
+			{ ...DEFAULT_FEATURE_DEFINITIONS.general, enabled: config?.features?.general?.enabled ?? true },
 		];
 
 		const capabilities: PlatformCapabilities = {
 			features,
-			version: config.version,
+			version: config?.version ?? '1.0.0',
 		};
 
 		logger.info('Returning platform capabilities', {

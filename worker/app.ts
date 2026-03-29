@@ -46,46 +46,50 @@ export function createApp(env: Env, registry?: InfraRegistry): Hono<AppEnv> {
     app.use('/api/*', cors(getCORSConfig(env)));
     
     // CSRF protection using double-submit cookie pattern with proper GET handling
-    app.use('*', async (c, next) => {
-        const method = c.req.method.toUpperCase();
-        
-        // Skip for WebSocket upgrades
-        const upgradeHeader = c.req.header('upgrade');
-        if (upgradeHeader?.toLowerCase() === 'websocket') {
-            return next();
-        }
-        
-        try {
-            // Handle GET requests - establish CSRF token if needed
-            if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
-                await next();
-                
-                // Only set CSRF token for successful API responses
-                if (c.req.url.startsWith('/api/') && c.res.status < 400) {
-                    await CsrfService.enforce(c.req.raw, c.res);
-                }
-                
-                return;
+    // Skip on portable runtimes (self-hosted, no ambient cookie auth from subdomains)
+    const runtime = (env as Record<string, unknown>).JELLY_RUNTIME as string | undefined;
+    if (runtime !== 'local' && runtime !== 'docker') {
+        app.use('*', async (c, next) => {
+            const method = c.req.method.toUpperCase();
+
+            // Skip for WebSocket upgrades
+            const upgradeHeader = c.req.header('upgrade');
+            if (upgradeHeader?.toLowerCase() === 'websocket') {
+                return next();
             }
-            
-            // Validate CSRF token for state-changing requests
-            await CsrfService.enforce(c.req.raw, undefined);
-            await next();
-        } catch (error) {
-            if (error instanceof SecurityError && error.type === SecurityErrorType.CSRF_VIOLATION) {
-                return new Response(JSON.stringify({ 
-                    error: { 
-                        message: 'CSRF validation failed',
-                        type: SecurityErrorType.CSRF_VIOLATION
+
+            try {
+                // Handle GET requests - establish CSRF token if needed
+                if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+                    await next();
+
+                    // Only set CSRF token for successful API responses
+                    if (c.req.url.startsWith('/api/') && c.res.status < 400) {
+                        await CsrfService.enforce(c.req.raw, c.res);
                     }
-                }), {
-                    status: 403,
-                    headers: { 'Content-Type': 'application/json' }
-                });
+
+                    return;
+                }
+
+                // Validate CSRF token for state-changing requests
+                await CsrfService.enforce(c.req.raw, undefined);
+                await next();
+            } catch (error) {
+                if (error instanceof SecurityError && error.type === SecurityErrorType.CSRF_VIOLATION) {
+                    return new Response(JSON.stringify({
+                        error: {
+                            message: 'CSRF validation failed',
+                            type: SecurityErrorType.CSRF_VIOLATION
+                        }
+                    }), {
+                        status: 403,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+                throw error;
             }
-            throw error;
-        }
-    });
+        });
+    }
 
     app.use('/api/*', async (c, next) => {
         // Apply global config middleware

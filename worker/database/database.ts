@@ -26,20 +26,33 @@ export type {
 
 /**
  * Core Database Service - Connection and Base Operations
- * 
+ *
  * Provides database connection, shared utilities, and core operations.
  * Domain-specific operations are handled by dedicated service classes.
  */
 export class DatabaseService {
+    // Using 'any' for db type to support both D1 and better-sqlite3 Drizzle instances
     public readonly db: DrizzleD1Database<typeof schema>;
-    private readonly d1: D1Database;
+    private readonly d1: D1Database | null;
     private readonly enableReplicas: boolean;
 
     constructor(env: Env) {
-        const instrumented = Sentry.instrumentD1WithSentry(env.DB);
-        this.d1 = instrumented;
-        this.db = drizzle(instrumented, { schema });
-        this.enableReplicas = env.ENABLE_READ_REPLICAS === 'true';
+        const runtime = (env as Record<string, unknown>).JELLY_RUNTIME as string | undefined;
+        if (runtime === 'local' || runtime === 'docker') {
+            // On portable runtimes, use the pre-initialized Drizzle instance from env.__DRIZZLE_DB
+            const drizzleDb = (env as Record<string, unknown>).__DRIZZLE_DB;
+            if (!drizzleDb) {
+                throw new Error('DatabaseService: __DRIZZLE_DB not found in env. Ensure server/index.ts initializes the database.');
+            }
+            this.db = drizzleDb as DrizzleD1Database<typeof schema>;
+            this.d1 = null;
+            this.enableReplicas = false;
+        } else {
+            const instrumented = Sentry.instrumentD1WithSentry(env.DB);
+            this.d1 = instrumented;
+            this.db = drizzle(instrumented, { schema });
+            this.enableReplicas = env.ENABLE_READ_REPLICAS === 'true';
+        }
     }
 
     /**
@@ -52,8 +65,8 @@ export class DatabaseService {
      * @returns Drizzle database instance configured for read operations
      */
     public getReadDb(strategy: 'fast' | 'fresh' = 'fast'): DrizzleD1Database<typeof schema> {
-        // Return regular db if replicas are disabled
-        if (!this.enableReplicas) {
+        // Return regular db if replicas are disabled or no D1 binding (local runtime)
+        if (!this.enableReplicas || !this.d1) {
             return this.db;
         }
 

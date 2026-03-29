@@ -87,6 +87,44 @@ async function ensureDataDirs() {
 	}
 }
 
+/**
+ * Initialize SQLite database: run migrations and return a Drizzle instance.
+ */
+async function initSqliteDb(dbPath: string): Promise<{ drizzleDb: unknown; sqliteInstance: unknown }> {
+	const { default: Database } = await import('better-sqlite3');
+	const { drizzle } = await import('drizzle-orm/better-sqlite3');
+	const schema = await import('../worker/database/schema');
+	const { readdir, readFile } = await import('node:fs/promises');
+	const { join } = await import('node:path');
+
+	const sqlite = new Database(dbPath);
+	sqlite.pragma('journal_mode = WAL');
+	sqlite.pragma('foreign_keys = ON');
+
+	// Run migrations in order
+	const migrationsDir = join(process.cwd(), 'migrations');
+	try {
+		const files = await readdir(migrationsDir);
+		const sqlFiles = files.filter(f => f.endsWith('.sql')).sort();
+		// Track applied migrations
+		sqlite.exec(`CREATE TABLE IF NOT EXISTS _migrations (name TEXT PRIMARY KEY, applied_at INTEGER)`);
+		const applied = new Set(
+			sqlite.prepare('SELECT name FROM _migrations').all().map((r: Record<string, string>) => r.name)
+		);
+		for (const file of sqlFiles) {
+			if (applied.has(file)) continue;
+			const sql = await readFile(join(migrationsDir, file), 'utf-8');
+			logger.info(`Applying migration: ${file}`);
+			sqlite.exec(sql);
+			sqlite.prepare('INSERT INTO _migrations (name, applied_at) VALUES (?, ?)').run(file, Date.now());
+		}
+	} catch (err) {
+		logger.warn('Migration directory not found or error applying migrations', { error: err });
+	}
+
+	return { drizzleDb: drizzle(sqlite, { schema }), sqliteInstance: sqlite };
+}
+
 async function main() {
 	await ensureDataDirs();
 
@@ -98,7 +136,16 @@ async function main() {
 		sandboxType: registry.sandboxType,
 	});
 
-	// Initialize database
+	// Initialize SQLite and inject into env for DatabaseService and direct DB access
+	const dbPath = `${DATA_DIR}/jllly.sqlite`;
+	const { drizzleDb, sqliteInstance } = await initSqliteDb(dbPath);
+	env.__DRIZZLE_DB = drizzleDb;
+
+	// Create D1-compatible shim so env.DB.prepare() works for kernel middleware etc.
+	const { D1DatabaseShim } = await import('./shims/d1-shim');
+	env.DB = new D1DatabaseShim(sqliteInstance as ConstructorParameters<typeof D1DatabaseShim>[0]);
+
+	// Verify database health
 	const dbHealth = await registry.database.getHealthStatus();
 	logger.info('Database status', dbHealth);
 

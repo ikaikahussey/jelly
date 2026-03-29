@@ -20,14 +20,14 @@ interface LoginModalProps {
 	onClose: () => void;
 
 	// Original OAuth-only interface (for backward compatibility)
-	onLogin: (provider: 'google' | 'github') => void;
+	onLogin: (provider: 'google' | 'github' | 'apple') => void;
 
 	// New enhanced interfaces (optional)
 	onEmailLogin?: (credentials: {
 		email: string;
 		password: string;
 	}) => Promise<void>;
-	onOAuthLogin?: (provider: 'google' | 'github', redirectUrl?: string) => void;
+	onOAuthLogin?: (provider: 'google' | 'github' | 'apple', redirectUrl?: string) => void;
 	onRegister?: (data: {
 		email: string;
 		password: string;
@@ -76,6 +76,7 @@ export function LoginModal({
 	const hasRegistration = requiresEmailAuth && !!onRegister;
 	const showGitHub = authProviders?.github && hasOAuth;
 	const showGoogle = authProviders?.google && hasOAuth;
+	const showApple = authProviders?.apple && hasOAuth;
 
 	const resetForm = () => {
 		setEmail('');
@@ -156,7 +157,7 @@ export function LoginModal({
 		}
 	};
 
-	const handleOAuthClick = (provider: 'google' | 'github') => {
+	const handleOAuthClick = (provider: 'google' | 'github' | 'apple') => {
 		// Use the new interface if available, otherwise fall back to original
 		if (onOAuthLogin) {
 			// Pass the current URL as redirect URL for context preservation
@@ -309,6 +310,25 @@ export function LoginModal({
 										</span>
 									</div>
 									<div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-gray-100 dark:via-gray-800 to-transparent group-hover:translate-x-full transition-transform duration-700" />
+								</motion.button>
+								)}
+
+								{/* Apple */}
+								{showApple && (
+									<motion.button
+									whileTap={{ scale: 0.98 }}
+									onClick={() => handleOAuthClick('apple')}
+									className="w-full group relative overflow-hidden rounded-xl bg-black dark:bg-bg-1 p-4 text-white transition-all hover:bg-gray-900 dark:hover:bg-[#1a1e22] border border-gray-800 dark:border-bg-4 disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									<div className="relative z-10 flex items-center justify-center gap-3">
+										<svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+											<path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+										</svg>
+										<span className="font-medium">
+											Continue with Apple
+										</span>
+									</div>
+									<div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:translate-x-full transition-transform duration-700" />
 								</motion.button>
 								)}
 
