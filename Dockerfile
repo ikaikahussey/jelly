@@ -37,6 +37,7 @@ COPY --from=builder /app/server ./server
 COPY --from=builder /app/worker ./worker
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/tsconfig*.json ./
 
