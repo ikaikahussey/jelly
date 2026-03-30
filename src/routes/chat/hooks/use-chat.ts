@@ -284,8 +284,17 @@ export function useChat({
 			connectionStatus.current = isRetry ? 'retrying' : 'connecting';
 
 			try {
-				logger.debug('🔗 Attempting WebSocket connection to:', wsUrl);
-				const ws = new WebSocket(wsUrl);
+				// For anonymous users, append session token as query param since WebSocket
+				// doesn't support custom headers in browsers
+				let finalWsUrl = wsUrl;
+				const sessionToken = localStorage.getItem('anonymous_session_token');
+				if (sessionToken && !document.cookie.includes('session=')) {
+					const separator = wsUrl.includes('?') ? '&' : '?';
+					finalWsUrl = `${wsUrl}${separator}session_token=${encodeURIComponent(sessionToken)}`;
+				}
+
+				logger.debug('🔗 Attempting WebSocket connection to:', finalWsUrl);
+				const ws = new WebSocket(finalWsUrl);
 				setWebsocket(ws);
 
 				// Mark this attempt id

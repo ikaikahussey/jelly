@@ -282,6 +282,9 @@ class ApiClient {
 		if (endpoint === '/api/auth/providers') return false;
 		if (endpoint === '/api/auth/sessions') return false;
 
+		// Don't trigger modal for agent endpoints (anonymous access supported)
+		if (endpoint.startsWith('/api/agent')) return false;
+
 		return true;
 	}
 

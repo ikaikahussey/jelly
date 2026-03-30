@@ -1,11 +1,9 @@
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { ArrowRight, Info } from 'react-feather';
 import { useNavigate } from 'react-router';
-import { useAuth } from '@/contexts/auth-context';
 import { ProjectModeSelector, type ProjectModeOption } from '../components/project-mode-selector';
 import { MAX_AGENT_QUERY_LENGTH, SUPPORTED_IMAGE_MIME_TYPES, type ProjectType } from '@/api-types';
 import { useFeature } from '@/features';
-import { useAuthGuard } from '../hooks/useAuthGuard';
 import { usePaginatedApps } from '@/hooks/use-paginated-apps';
 import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import { AppCard } from '@/components/shared/AppCard';
@@ -27,11 +25,9 @@ const ASCII_BANNER = `
 
 export default function Home() {
 	const navigate = useNavigate();
-	const { requireAuth } = useAuthGuard();
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const [projectMode, setProjectMode] = useState<ProjectType>('app');
 	const [query, setQuery] = useState('');
-	const { user } = useAuth();
 	const { isLoadingCapabilities, capabilities, getEnabledFeatures } = useFeature();
 	const [visitorCount] = useState(() => Math.floor(Math.random() * 9000) + 1000);
 
@@ -108,16 +104,6 @@ export default function Home() {
 		const encodedMode = encodeURIComponent(mode);
 		const imageParam = images.length > 0 ? `&images=${encodeURIComponent(JSON.stringify(images))}` : '';
 		const intendedUrl = `/chat/new?query=${encodedQuery}&projectType=${encodedMode}${imageParam}`;
-
-		if (
-			!requireAuth({
-				requireFullAuth: true,
-				actionContext: 'to create applications',
-				intendedUrl: intendedUrl,
-			})
-		) {
-			return;
-		}
 
 		navigate(intendedUrl);
 		clearImages();

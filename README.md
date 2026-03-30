@@ -1,6 +1,6 @@
 # JLLLY
 
-> **Social AI webapp generator** -- jllly.com
+> **Social AI webapp generator** -- j3lli.com
 
 Forked from Cloudflare VibeSDK. JLLLY adds a platform kernel (identity, relationships, content objects, ledger), pluggable infrastructure providers for running outside Cloudflare, and a themeable UI system.
 

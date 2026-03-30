@@ -351,12 +351,18 @@ export class CodeGeneratorAgent extends Agent<Env, AgentState> implements AgentI
     
     protected async saveToDatabase() {
         this.logger().info(`Saving agent ${this.getAgentId()} to database`);
-        // Save the app to database (authenticated users only)
         const appService = new AppService(this.env);
+        const userId = this.state.metadata.userId;
+        const isAnonymous = userId.startsWith('anon_');
+
+        // For anonymous users, store session token and set userId to null
+        const sessionToken = isAnonymous ? userId.replace('anon_', '') : null;
+        const dbUserId = isAnonymous ? null : userId;
+
         await appService.createApp({
             id: this.state.metadata.agentId,
-            userId: this.state.metadata.userId,
-            sessionToken: null,
+            userId: dbUserId,
+            sessionToken,
             title: this.state.blueprint.title || this.state.query.substring(0, 100),
             description: this.state.blueprint.description,
             originalPrompt: this.state.query,
@@ -364,12 +370,13 @@ export class CodeGeneratorAgent extends Agent<Env, AgentState> implements AgentI
             framework: this.state.blueprint.frameworks.join(','),
             visibility: 'private',
             status: 'generating',
-                createdAt: new Date(),
+            createdAt: new Date(),
             updatedAt: new Date()
-            });
-        this.logger().info(`App saved successfully to database for agent ${this.state.metadata.agentId}`, { 
-            agentId: this.state.metadata.agentId, 
-            userId: this.state.metadata.userId,
+        });
+        this.logger().info(`App saved successfully to database for agent ${this.state.metadata.agentId}`, {
+            agentId: this.state.metadata.agentId,
+            userId: dbUserId,
+            isAnonymous,
             visibility: 'private'
         });
         this.logger().info(`Agent initialized successfully for agent ${this.state.metadata.agentId}`);

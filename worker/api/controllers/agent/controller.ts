@@ -90,16 +90,19 @@ export class CodingAgentController extends BaseController {
                 }
             });
             const writer = writable.getWriter();
-            // Check if user is authenticated (required for app creation)
             const user = context.user!;
-            try {
-                await RateLimitService.enforceAppCreationRateLimit(env, context.config.security.rateLimit, user, request);
-            } catch (error) {
-                if (error instanceof Error) {
-                    return CodingAgentController.createErrorResponse(error, 429);
-                } else {
-                    this.logger.error('Unknown error in enforceAppCreationRateLimit', error);
-                    return CodingAgentController.createErrorResponse(JSON.stringify(error), 429);
+
+            // Skip rate limiting for anonymous users; enforce for authenticated users
+            if (!user.isAnonymous) {
+                try {
+                    await RateLimitService.enforceAppCreationRateLimit(env, context.config.security.rateLimit, user, request);
+                } catch (error) {
+                    if (error instanceof Error) {
+                        return CodingAgentController.createErrorResponse(error, 429);
+                    } else {
+                        this.logger.error('Unknown error in enforceAppCreationRateLimit', error);
+                        return CodingAgentController.createErrorResponse(JSON.stringify(error), 429);
+                    }
                 }
             }
 
@@ -109,16 +112,18 @@ export class CodingAgentController extends BaseController {
             const behaviorType = resolveBehaviorType(body);
 
             this.logger.info(`Resolved behaviorType: ${behaviorType}, projectType: ${projectType} for agent ${agentId}`);
-                                
-            // Fetch all user model configs, api keys and agent instance at once
-            const userConfigsRecord = await modelConfigService.getUserModelConfigs(user.id);
-                                
-            // Extract only user-overridden configs, stripping metadata fields
+
+            // Fetch user model configs (empty for anonymous users)
             const userModelConfigs: Record<string, ModelConfig> = {};
-            for (const [actionKey, mergedConfig] of Object.entries(userConfigsRecord)) {
-                if (mergedConfig.isUserOverride) {
-                    const { isUserOverride, userConfigId, ...modelConfig } = mergedConfig;
-                    userModelConfigs[actionKey] = modelConfig;
+            if (!user.isAnonymous) {
+                const userConfigsRecord = await modelConfigService.getUserModelConfigs(user.id);
+
+                // Extract only user-overridden configs, stripping metadata fields
+                for (const [actionKey, mergedConfig] of Object.entries(userConfigsRecord)) {
+                    if (mergedConfig.isUserOverride) {
+                        const { isUserOverride, userConfigId, ...modelConfig } = mergedConfig;
+                        userModelConfigs[actionKey] = modelConfig;
+                    }
                 }
             }
 

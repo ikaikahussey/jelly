@@ -13,22 +13,23 @@ import { Context } from 'hono';
 import { AppEnv } from '../../types/appenv';
 import { RateLimitExceededError } from 'shared/types/errors';
 import * as Sentry from '@sentry/cloudflare';
-import { getUserConfigurableSettings } from 'worker/config';
+import { getUserConfigurableSettings, getGlobalConfigurableSettings } from 'worker/config';
 import { authenticateViaTicket, hasTicketParam } from './ticketAuth';
+import { generateId } from '../../utils/idGenerator';
 
 const logger = createLogger('RouteAuth');
 
 /**
  * Authentication levels for route protection
  */
-export type AuthLevel = 'public' | 'authenticated' | 'owner-only';
+export type AuthLevel = 'public' | 'authenticated' | 'authenticated-or-anonymous' | 'owner-only' | 'owner-only-or-anonymous';
 
 /**
  * Authentication requirement configuration
  */
 export interface AuthRequirement {
     required: boolean;
-    level: 'public' | 'authenticated' | 'owner-only';
+    level: 'public' | 'authenticated' | 'authenticated-or-anonymous' | 'owner-only' | 'owner-only-or-anonymous';
     resourceOwnershipCheck?: (user: AuthUser, params: Record<string, string>, env: Env) => Promise<boolean>;
 }
 
@@ -57,27 +58,40 @@ export interface AuthLevelOptions {
  */
 export const AuthConfig = {
     // Public route - no authentication required
-    public: { 
+    public: {
         required: false,
         level: 'public' as const
     },
-    
+
     // Require full authentication (no anonymous users)
-    authenticated: { 
-        required: true, 
-        level: 'authenticated' as const 
+    authenticated: {
+        required: true,
+        level: 'authenticated' as const
     },
-    
-    // Require resource ownership (for app editing)
-    ownerOnly: { 
-        required: true, 
+
+    // Allow authenticated users or create anonymous users from session token
+    authenticatedOrAnonymous: {
+        required: true,
+        level: 'authenticated-or-anonymous' as const
+    },
+
+    // Require resource ownership (for app editing) - supports anonymous ownership via session token
+    ownerOnly: {
+        required: true,
         level: 'owner-only' as const,
         resourceOwnershipCheck: checkAppOwnership
     },
-    
+
+    // Owner-only with anonymous session token support
+    ownerOnlyOrAnonymous: {
+        required: true,
+        level: 'owner-only-or-anonymous' as const,
+        resourceOwnershipCheck: checkAppOwnership
+    },
+
     // Public read access, but owner required for modifications
-    publicReadOwnerWrite: { 
-        required: false 
+    publicReadOwnerWrite: {
+        required: false
     }
 } as const;
 
@@ -103,6 +117,43 @@ export async function routeAuthChecks(
                 return {
                     success: false,
                     response: createAuthRequiredResponse()
+                };
+            }
+
+            return { success: true };
+        }
+
+        // For authenticated-or-anonymous routes (user is always set by enforceAuthRequirement)
+        if (requirement.level === 'authenticated-or-anonymous') {
+            if (!user) {
+                return {
+                    success: false,
+                    response: createAuthRequiredResponse()
+                };
+            }
+            return { success: true };
+        }
+
+        // For owner-only-or-anonymous routes (ownership checked with session token fallback)
+        if (requirement.level === 'owner-only-or-anonymous') {
+            if (!user) {
+                return {
+                    success: false,
+                    response: createAuthRequiredResponse('Account required')
+                };
+            }
+
+            if (requirement.resourceOwnershipCheck) {
+                if (params) {
+                    const isOwner = await requirement.resourceOwnershipCheck(user, params, env);
+                    return {
+                        success: isOwner,
+                        response: isOwner ? undefined : createForbiddenResponse('You can only access your own resources')
+                    }
+                }
+                return {
+                    success: false,
+                    response: createForbiddenResponse('Invalid resource ownership')
                 };
             }
 
@@ -167,12 +218,15 @@ export async function enforceAuthRequirement(c: Context<AppEnv>) : Promise<Respo
         return errorResponse('No authentication level found', 500);
     }
     
+    const requiresAuth = requirement.level === 'authenticated' || requirement.level === 'owner-only';
+    const supportsAnonymous = requirement.level === 'authenticated-or-anonymous' || requirement.level === 'owner-only-or-anonymous';
+
     // Only perform auth if we need it or don't have user yet
-    if (!user && (requirement.level === 'authenticated' || requirement.level === 'owner-only')) {
+    if (!user && (requiresAuth || supportsAnonymous)) {
         const request = c.req.raw;
         const env = c.env;
         const params = c.req.param();
-        
+
         // Strategy 1: Ticket-based auth (if configured and ticket present)
         if (authOptions?.ticketAuth && hasTicketParam(request)) {
             const ticketAuth = await authenticateViaTicket(request, env, authOptions.ticketAuth, params);
@@ -181,10 +235,10 @@ export async function enforceAuthRequirement(c: Context<AppEnv>) : Promise<Respo
                 c.set('user', user);
                 c.set('sessionId', ticketAuth.sessionId);
                 Sentry.setUser({ id: user.id, email: user.email });
-                
+
                 const config = await getUserConfigurableSettings(c.env, user.id);
                 c.set('config', config);
-                
+
                 // Skip rate limiting for ticket auth (already rate-limited at ticket creation)
                 logger.info('Authenticated via ticket', { userId: user.id, resourceType: authOptions.ticketAuth.resourceType });
             } else {
@@ -192,29 +246,70 @@ export async function enforceAuthRequirement(c: Context<AppEnv>) : Promise<Respo
                 return errorResponse('Invalid or expired ticket', 403);
             }
         }
-        
+
         // Strategy 2: Standard JWT auth (header/cookie)
         if (!user) {
             const userSession = await authMiddleware(c.req.raw, c.env);
-            if (!userSession) {
+            if (userSession) {
+                user = userSession.user;
+                c.set('user', user);
+                c.set('sessionId', userSession.sessionId);
+                Sentry.setUser({ id: user.id, email: user.email });
+
+                const config = await getUserConfigurableSettings(c.env, user.id);
+                c.set('config', config);
+
+                try {
+                    await RateLimitService.enforceAuthRateLimit(c.env, config.security.rateLimit, user, c.req.raw);
+                } catch (error) {
+                    if (error instanceof RateLimitExceededError) {
+                        return errorResponse(error, 429);
+                    }
+                    logger.error('Error enforcing auth rate limit', error);
+                    return errorResponse('Internal server error', 500);
+                }
+            } else if (!supportsAnonymous) {
+                // Strict auth required but no user found
                 return errorResponse('Authentication required', 401);
             }
-            user = userSession.user;
-            c.set('user', user);
-            c.set('sessionId', userSession.sessionId);
-            Sentry.setUser({ id: user.id, email: user.email });
+        }
 
-            const config = await getUserConfigurableSettings(c.env, user.id);
-            c.set('config', config);
+        // Strategy 3: Anonymous user from session token (only for anonymous-capable routes)
+        // Check header first, then query param (WebSocket connections can't send custom headers)
+        if (!user && supportsAnonymous) {
+            const url = new URL(request.url);
+            const sessionToken = request.headers.get('X-Session-Token') || url.searchParams.get('session_token');
+            if (sessionToken) {
+                const anonId = `anon_${sessionToken}`;
+                user = {
+                    id: anonId,
+                    email: `${anonId}@anonymous`,
+                    displayName: 'Guest',
+                    isAnonymous: true,
+                };
+                c.set('user', user);
+                c.set('sessionId', sessionToken);
 
-            try {
-                await RateLimitService.enforceAuthRateLimit(c.env, config.security.rateLimit, user, c.req.raw);
-            } catch (error) {
-                if (error instanceof RateLimitExceededError) {
-                    return errorResponse(error, 429);
-                }
-                logger.error('Error enforcing auth rate limit', error);
-                return errorResponse('Internal server error', 500);
+                const config = await getGlobalConfigurableSettings(c.env);
+                c.set('config', config);
+
+                logger.info('Created anonymous user from session token', { userId: anonId });
+            } else {
+                // No session token either - create a transient anonymous user
+                const transientId = `anon_${generateId()}`;
+                user = {
+                    id: transientId,
+                    email: `${transientId}@anonymous`,
+                    displayName: 'Guest',
+                    isAnonymous: true,
+                };
+                c.set('user', user);
+                c.set('sessionId', transientId);
+
+                const config = await getGlobalConfigurableSettings(c.env);
+                c.set('config', config);
+
+                logger.info('Created transient anonymous user', { userId: transientId });
             }
         }
     }
@@ -277,6 +372,7 @@ function createForbiddenResponse(message: string): Response {
 
 /**
  * Check if user owns an app by agent/app ID
+ * For anonymous users (id starts with "anon_"), also checks session token ownership
  */
 export async function checkAppOwnership(user: AuthUser, params: Record<string, string>, env: Env): Promise<boolean> {
     try {
@@ -286,6 +382,16 @@ export async function checkAppOwnership(user: AuthUser, params: Record<string, s
         }
 
         const appService = new AppService(env);
+
+        // For anonymous users, check ownership by session token
+        if (user.isAnonymous && user.id.startsWith('anon_')) {
+            const sessionToken = user.id.replace('anon_', '');
+            const ownershipBySession = await appService.checkAppOwnershipBySession(agentId, sessionToken);
+            if (ownershipBySession) {
+                return true;
+            }
+        }
+
         const ownershipResult = await appService.checkAppOwnership(agentId, user.id);
         return ownershipResult.isOwner;
     } catch (error) {

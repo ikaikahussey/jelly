@@ -456,6 +456,29 @@ export class AppService extends BaseService {
     }
 
     /**
+     * Check if an anonymous session token owns an app
+     */
+    async checkAppOwnershipBySession(appId: string, sessionToken: string): Promise<boolean> {
+        const readDb = this.getReadDb('fast');
+        const app = await readDb
+            .select({
+                id: schema.apps.id,
+                sessionToken: schema.apps.sessionToken,
+                userId: schema.apps.userId,
+            })
+            .from(schema.apps)
+            .where(eq(schema.apps.id, appId))
+            .get();
+
+        if (!app) {
+            return false;
+        }
+
+        // Match by session token (anonymous user) or by the synthetic anon user ID
+        return app.sessionToken === sessionToken || app.userId === `anon_${sessionToken}`;
+    }
+
+    /**
      * Get single app with favorite status for user
      * Optimized to fetch favorite status separately
      */

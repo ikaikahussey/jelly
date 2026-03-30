@@ -12,22 +12,20 @@ export function setupCodegenRoutes(app: Hono<AppEnv>): void {
     // CODE GENERATION ROUTES
     // ========================================
     
-    // CRITICAL: Create new app - requires full authentication
-    app.post('/api/agent', setAuthLevel(AuthConfig.authenticated), adaptController(CodingAgentController, CodingAgentController.startCodeGeneration));
-    
+    // Create new app - authenticated users or anonymous guests
+    app.post('/api/agent', setAuthLevel(AuthConfig.authenticatedOrAnonymous), adaptController(CodingAgentController, CodingAgentController.startCodeGeneration));
+
     // ========================================
     // APP EDITING ROUTES (/chat/:id frontend)
     // ========================================
-    
-    // WebSocket for app editing - OWNER ONLY with ticket support
-    // Supports ticket-based auth (SDK) or JWT-based auth (browser)
-    app.get('/api/agent/:agentId/ws', setAuthLevel(AuthConfig.ownerOnly, { 
-        ticketAuth: { resourceType: 'agent', paramName: 'agentId' } 
+
+    // WebSocket for app editing - owner or anonymous session owner, with ticket support
+    app.get('/api/agent/:agentId/ws', setAuthLevel(AuthConfig.ownerOnlyOrAnonymous, {
+        ticketAuth: { resourceType: 'agent', paramName: 'agentId' }
     }), adaptController(CodingAgentController, CodingAgentController.handleWebSocketConnection));
-    
-    // Connect to existing agent for editing - OWNER ONLY
-    // Only the app owner should be able to connect for editing purposes
-    app.get('/api/agent/:agentId/connect', setAuthLevel(AuthConfig.ownerOnly), adaptController(CodingAgentController, CodingAgentController.connectToExistingAgent));
+
+    // Connect to existing agent for editing - owner or anonymous session owner
+    app.get('/api/agent/:agentId/connect', setAuthLevel(AuthConfig.ownerOnlyOrAnonymous), adaptController(CodingAgentController, CodingAgentController.connectToExistingAgent));
 
     app.get('/api/agent/:agentId/preview', setAuthLevel(AuthConfig.authenticated), adaptController(CodingAgentController, CodingAgentController.deployPreview));
 }
