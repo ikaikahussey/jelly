@@ -127,7 +127,7 @@ export class AppleOAuthProvider extends BaseOAuthProvider {
 			client_id: this.clientId,
 			redirect_uri: this.redirectUri,
 			response_type: 'code',
-			response_mode: 'query',
+			response_mode: 'form_post',
 			scope: this.scopes.join(' '),
 			state,
 		});

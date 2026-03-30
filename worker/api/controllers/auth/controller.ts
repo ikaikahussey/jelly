@@ -304,22 +304,36 @@ export class AuthController extends BaseController {
     
     /**
      * Handle OAuth callback
-     * GET /api/auth/callback/:provider
+     * GET/POST /api/auth/callback/:provider
+     * Apple Sign In uses form_post, so callback may arrive as POST with form-encoded body
      */
     static async handleOAuthCallback(request: Request, env: Env, _ctx: ExecutionContext, routeContext: RouteContext): Promise<Response> {
         try {
             const validatedProvider = oauthProviderSchema.parse(routeContext.pathParams.provider);
-            
-            const code = routeContext.queryParams.get('code');
-            const state = routeContext.queryParams.get('state');
-            const error = routeContext.queryParams.get('error');
-            
+
+            let code: string | null = null;
+            let state: string | null = null;
+            let error: string | null = null;
+
+            if (request.method === 'POST') {
+                // Apple form_post: parameters arrive as application/x-www-form-urlencoded body
+                const formData = await request.formData();
+                code = formData.get('code') as string | null;
+                state = formData.get('state') as string | null;
+                error = formData.get('error') as string | null;
+            } else {
+                // Standard GET callback (GitHub, Google)
+                code = routeContext.queryParams.get('code');
+                state = routeContext.queryParams.get('state');
+                error = routeContext.queryParams.get('error');
+            }
+
             if (error) {
                 this.logger.error('OAuth provider returned error', { provider: validatedProvider, error });
                 const baseUrl = new URL(request.url).origin;
                 return Response.redirect(`${baseUrl}/?error=oauth_failed`, 302);
             }
-            
+
             if (!code || !state) {
                 const baseUrl = new URL(request.url).origin;
                 return Response.redirect(`${baseUrl}/?error=missing_params`, 302);

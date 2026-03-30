@@ -43,6 +43,8 @@ export function setupAuthRoutes(app: Hono<AppEnv>): void {
     // OAuth routes (under /oauth path to avoid conflicts)
     authRouter.get('/oauth/:provider', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.initiateOAuth));
     authRouter.get('/callback/:provider', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.handleOAuthCallback));
+    // Apple Sign In uses form_post response_mode, so callback arrives as POST
+    authRouter.post('/callback/:provider', setAuthLevel(AuthConfig.public), adaptController(AuthController, AuthController.handleOAuthCallback));
     
     // Mount the auth router under /api/auth
     app.route('/api/auth', authRouter);
