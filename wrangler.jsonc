@@ -104,6 +104,10 @@
       {
         "binding": "TEMPLATES_BUCKET",
         "bucket_name": "vibesdk-templates",
+      },
+      {
+        "binding": "MEDIA_BUCKET",
+        "bucket_name": "vibesdk-media",
       }
     ],
     "kv_namespaces": [

@@ -19,6 +19,8 @@ export function setupKernelRoutes(app: Hono<AppEnv>): void {
     kernel.patch('/users/me', setAuthLevel(AuthConfig.authenticated), adaptController(KernelController, KernelController.updateMe));
 
     // --- Graph (Relationships) ---
+    kernel.get('/graph/count', setAuthLevel(AuthConfig.public), adaptController(KernelController, KernelController.countEdges));
+    kernel.post('/graph/check', setAuthLevel(AuthConfig.authenticated), adaptController(KernelController, KernelController.batchCheckEdges));
     kernel.post('/graph', setAuthLevel(AuthConfig.authenticated), adaptController(KernelController, KernelController.createRelationship));
     kernel.delete('/graph', setAuthLevel(AuthConfig.authenticated), adaptController(KernelController, KernelController.deleteRelationship));
     kernel.get('/graph', setAuthLevel(AuthConfig.public), adaptController(KernelController, KernelController.queryRelationships));
@@ -63,6 +65,11 @@ export function setupKernelRoutes(app: Hono<AppEnv>): void {
     kernel.get('/components/:id', setAuthLevel(AuthConfig.public), adaptController(KernelController, KernelController.getComponent));
     kernel.patch('/components/:id', setAuthLevel(AuthConfig.authenticated), adaptController(KernelController, KernelController.updateComponent));
     kernel.delete('/components/:id', setAuthLevel(AuthConfig.authenticated), adaptController(KernelController, KernelController.deleteComponent));
+
+    // --- Media ---
+    kernel.post('/media', setAuthLevel(AuthConfig.authenticated), adaptController(KernelController, KernelController.uploadMedia));
+    kernel.get('/media/:key{.+}', setAuthLevel(AuthConfig.public), adaptController(KernelController, KernelController.serveMedia));
+    kernel.delete('/media/:key{.+}', setAuthLevel(AuthConfig.authenticated), adaptController(KernelController, KernelController.deleteMedia));
 
     // Mount under /api/kernel
     app.route('/api/kernel', kernel);

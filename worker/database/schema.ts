@@ -731,6 +731,20 @@ export const kernelComponents = sqliteTable('kernel_components', {
     updatedAt: integer('updated_at').notNull(),
 });
 
+/**
+ * Kernel Media - Tracks uploaded media files stored in R2
+ */
+export const kernelMedia = sqliteTable('kernel_media', {
+    key: text('key').primaryKey(), // R2 object key
+    ownerId: text('owner_id').notNull().references(() => kernelUsers.userId),
+    contentType: text('content_type').notNull(),
+    size: integer('size').notNull(), // bytes
+    filename: text('filename'),
+    createdAt: integer('created_at').notNull(),
+}, (table) => ({
+    ownerIdx: index('idx_media_owner').on(table.ownerId, table.createdAt),
+}));
+
 // Kernel type exports
 export type KernelUser = typeof kernelUsers.$inferSelect;
 export type NewKernelUser = typeof kernelUsers.$inferInsert;
@@ -761,3 +775,6 @@ export type NewKernelPurchase = typeof kernelPurchases.$inferInsert;
 
 export type KernelComponent = typeof kernelComponents.$inferSelect;
 export type NewKernelComponent = typeof kernelComponents.$inferInsert;
+
+export type KernelMediaRecord = typeof kernelMedia.$inferSelect;
+export type NewKernelMediaRecord = typeof kernelMedia.$inferInsert;

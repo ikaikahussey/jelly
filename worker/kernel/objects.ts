@@ -15,6 +15,7 @@ export interface ObjectsQueryParams {
     owner?: string;
     visibility?: string;
     parent?: string;
+    search?: string;
     limit?: number;
     cursor?: string;
 }
@@ -133,6 +134,10 @@ export class KernelObjectsService extends BaseService {
         }
         if (params.parent) {
             conditions.push(eq(schema.kernelObjects.parentId, params.parent));
+        }
+        if (params.search) {
+            const searchTerm = `%${params.search}%`;
+            conditions.push(sql`${schema.kernelObjects.payloadJson} LIKE ${searchTerm}`);
         }
         if (params.cursor) {
             const cursorTs = parseInt(params.cursor, 10);

@@ -55,6 +55,7 @@ declare namespace Cloudflare {
 		DORateLimitStore: DurableObjectNamespace<import("./worker/index").DORateLimitStore>;
 		UserSecretsStore: DurableObjectNamespace<import("./worker/index").UserSecretsStore>;
 		TEMPLATES_BUCKET: R2Bucket;
+		MEDIA_BUCKET: R2Bucket;
 		DB: D1Database;
 		DISPATCHER: DispatchNamespace;
 		API_RATE_LIMITER: RateLimit;

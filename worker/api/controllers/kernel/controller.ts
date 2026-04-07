@@ -14,6 +14,7 @@ import { KernelDashboardService } from '../../../kernel/dashboard';
 import { KernelListingsService, KernelPaymentAccountsService } from '../../../kernel/listings';
 import { KernelComponentsService } from '../../../kernel/components';
 import { createPaymentProvider } from '../../../kernel/payments/factory';
+import { KernelMediaService } from '../../../kernel/media';
 import { createLogger } from '../../../logger';
 
 const logger = createLogger('KernelController');
@@ -211,6 +212,58 @@ export class KernelController extends BaseController {
         }
     }
 
+    /**
+     * GET /api/kernel/graph/count - Count edges by type
+     */
+    static async countEdges(request: Request, env: Env, _ctx: ExecutionContext, context: RouteContext): Promise<Response> {
+        try {
+            const params = context.queryParams;
+            const graphService = new KernelGraphService(env);
+            const count = await graphService.countEdges({
+                from: params.get('from') ?? undefined,
+                to: params.get('to') ?? undefined,
+                type: params.get('type') ?? undefined,
+            });
+
+            return KernelController.createSuccessResponse({ count });
+        } catch (error) {
+            logger.error('Error counting edges', { error });
+            return KernelController.createErrorResponse('Failed to count edges', 500);
+        }
+    }
+
+    /**
+     * POST /api/kernel/graph/check - Batch check edge existence
+     */
+    static async batchCheckEdges(request: Request, env: Env, _ctx: ExecutionContext, context: RouteContext): Promise<Response> {
+        try {
+            const user = context.user!;
+            const bodyResult = await KernelController.parseJsonBody<{
+                node_ids: string[];
+                edge_type: string;
+            }>(request);
+
+            if (!bodyResult.success) return bodyResult.response!;
+
+            const { node_ids, edge_type } = bodyResult.data!;
+            if (!node_ids || !Array.isArray(node_ids) || !edge_type) {
+                return KernelController.createErrorResponse('node_ids (array) and edge_type are required', 400);
+            }
+
+            if (node_ids.length > 100) {
+                return KernelController.createErrorResponse('Maximum 100 node_ids per request', 400);
+            }
+
+            const graphService = new KernelGraphService(env);
+            const result = await graphService.batchCheckEdges(user.id, node_ids, edge_type);
+
+            return KernelController.createSuccessResponse(result);
+        } catch (error) {
+            logger.error('Error batch checking edges', { error });
+            return KernelController.createErrorResponse('Failed to check edges', 500);
+        }
+    }
+
     // ========================================
     // OBJECTS (Content)
     // ========================================
@@ -341,6 +394,7 @@ export class KernelController extends BaseController {
                     owner: params.get('owner') ?? undefined,
                     visibility: params.get('visibility') ?? undefined,
                     parent: params.get('parent') ?? undefined,
+                    search: params.get('q') ?? undefined,
                     limit: params.has('limit') ? parseInt(params.get('limit')!, 10) : undefined,
                     cursor: params.get('cursor') ?? undefined,
                 },
@@ -1078,6 +1132,106 @@ export class KernelController extends BaseController {
         } catch (error) {
             logger.error('Error searching components', { error });
             return KernelController.createErrorResponse('Failed to search components', 500);
+        }
+    }
+
+    // ========================================
+    // MEDIA
+    // ========================================
+
+    /**
+     * POST /api/kernel/media - Upload a file
+     * Accepts multipart/form-data with a 'file' field
+     */
+    static async uploadMedia(request: Request, env: Env, _ctx: ExecutionContext, context: RouteContext): Promise<Response> {
+        try {
+            const user = context.user!;
+            const contentType = request.headers.get('Content-Type') ?? '';
+
+            if (!contentType.includes('multipart/form-data')) {
+                return KernelController.createErrorResponse('Content-Type must be multipart/form-data', 400);
+            }
+
+            const formData = await request.formData();
+            const fileEntry = formData.get('file');
+
+            if (!fileEntry || typeof fileEntry === 'string') {
+                return KernelController.createErrorResponse('A file field is required', 400);
+            }
+
+            // Cast to File -- CF Workers FormData can return Blob/File for binary entries
+            const file = fileEntry as unknown as File;
+            const buffer = await file.arrayBuffer();
+            const mediaService = new KernelMediaService(env);
+            const result = await mediaService.upload(
+                user.id,
+                buffer,
+                file.type,
+                file.name || null
+            );
+
+            return KernelController.createSuccessResponse(result);
+        } catch (error: unknown) {
+            if (error instanceof Error && error.name === 'MediaValidationError') {
+                return KernelController.createErrorResponse(error.message, 400);
+            }
+            logger.error('Error uploading media', { error });
+            return KernelController.createErrorResponse('Failed to upload media', 500);
+        }
+    }
+
+    /**
+     * GET /api/kernel/media/:key+ - Serve a file from R2
+     */
+    static async serveMedia(request: Request, env: Env, _ctx: ExecutionContext, context: RouteContext): Promise<Response> {
+        try {
+            const key = context.pathParams.key;
+            if (!key) {
+                return KernelController.createErrorResponse('Media key required', 400);
+            }
+
+            const mediaService = new KernelMediaService(env);
+            const result = await mediaService.serve(key);
+
+            if (!result) {
+                return KernelController.createErrorResponse('Media not found', 404);
+            }
+
+            return new Response(result.body, {
+                headers: {
+                    'Content-Type': result.contentType,
+                    'Content-Length': String(result.size),
+                    'Cache-Control': 'public, max-age=31536000, immutable',
+                },
+            });
+        } catch (error) {
+            logger.error('Error serving media', { error });
+            return KernelController.createErrorResponse('Failed to serve media', 500);
+        }
+    }
+
+    /**
+     * DELETE /api/kernel/media/:key+ - Delete a file from R2 (owner only)
+     */
+    static async deleteMedia(request: Request, env: Env, _ctx: ExecutionContext, context: RouteContext): Promise<Response> {
+        try {
+            const user = context.user!;
+            const key = context.pathParams.key;
+            if (!key) {
+                return KernelController.createErrorResponse('Media key required', 400);
+            }
+
+            const mediaService = new KernelMediaService(env);
+            const deleted = await mediaService.delete(key, user.id);
+
+            if (!deleted) {
+                return KernelController.createErrorResponse('Media not found or not owned by you', 404);
+            }
+
+            return KernelController.createSuccessResponse({ deleted: true });
+        } catch (error) {
+            logger.error('Error deleting media', { error });
+            return KernelController.createErrorResponse('Failed to delete media', 500);
         }
     }
 }
